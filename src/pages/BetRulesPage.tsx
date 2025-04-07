@@ -8,9 +8,10 @@ import { useToast } from "@/components/ui/use-toast";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { PlusCircle, Trash, Edit, Book } from "lucide-react";
+import { PlusCircle, Trash, Edit, Book, AlertTriangle } from "lucide-react";
 import { useState } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
 interface BetRule {
   id: string;
@@ -19,6 +20,9 @@ interface BetRule {
   trigger: string;
   betType: string;
   betAmount: number;
+  useMartingale: boolean;
+  martingaleLevel: number;
+  martingaleMultiplier: number;
 }
 
 export default function BetRulesPage() {
@@ -31,6 +35,9 @@ export default function BetRulesPage() {
       trigger: "Entrada: Futebol Studio - Casa",
       betType: "Casa",
       betAmount: 25,
+      useMartingale: true,
+      martingaleLevel: 2,
+      martingaleMultiplier: 2.0,
     },
     {
       id: "rule-2",
@@ -39,6 +46,9 @@ export default function BetRulesPage() {
       trigger: "Entrada: Futebol Studio - Fora",
       betType: "Fora",
       betAmount: 25,
+      useMartingale: false,
+      martingaleLevel: 0,
+      martingaleMultiplier: 1.0,
     },
     {
       id: "rule-3",
@@ -47,6 +57,9 @@ export default function BetRulesPage() {
       trigger: "Entrada: Futebol Studio - Empate",
       betType: "Empate",
       betAmount: 50,
+      useMartingale: true,
+      martingaleLevel: 3,
+      martingaleMultiplier: 1.5,
     },
   ]);
 
@@ -55,6 +68,9 @@ export default function BetRulesPage() {
     trigger: "",
     betType: "Casa",
     betAmount: 25,
+    useMartingale: false,
+    martingaleLevel: 1,
+    martingaleMultiplier: 2.0,
   });
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -62,8 +78,17 @@ export default function BetRulesPage() {
     setFormData({ ...formData, [name]: value });
   };
 
+  const handleSwitchChange = (checked: boolean) => {
+    setFormData({ ...formData, useMartingale: checked });
+  };
+
   const handleBetTypeChange = (value: string) => {
     setFormData({ ...formData, betType: value });
+  };
+
+  const handleNumberInputChange = (e: React.ChangeEvent<HTMLInputElement>, fieldName: string) => {
+    const value = Number(e.target.value);
+    setFormData({ ...formData, [fieldName]: value });
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -85,6 +110,9 @@ export default function BetRulesPage() {
       trigger: formData.trigger,
       betType: formData.betType,
       betAmount: Number(formData.betAmount),
+      useMartingale: formData.useMartingale,
+      martingaleLevel: Number(formData.martingaleLevel),
+      martingaleMultiplier: Number(formData.martingaleMultiplier),
     };
 
     setRules([...rules, newRule]);
@@ -93,6 +121,9 @@ export default function BetRulesPage() {
       trigger: "",
       betType: "Casa",
       betAmount: 25,
+      useMartingale: false,
+      martingaleLevel: 1,
+      martingaleMultiplier: 2.0,
     });
 
     toast({
@@ -190,6 +221,89 @@ export default function BetRulesPage() {
                 />
               </div>
               
+              <Separator />
+              
+              <Accordion type="single" collapsible className="w-full">
+                <AccordionItem value="martingale">
+                  <AccordionTrigger className="py-2">
+                    <div className="flex items-center space-x-2">
+                      <span>Configuração de Martingale</span>
+                      {formData.useMartingale && (
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100">
+                          Ativo
+                        </span>
+                      )}
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <div className="space-y-3 pt-2">
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="useMartingale" className="cursor-pointer">Usar Martingale</Label>
+                        <Switch 
+                          id="useMartingale"
+                          checked={formData.useMartingale} 
+                          onCheckedChange={handleSwitchChange}
+                        />
+                      </div>
+                      
+                      {formData.useMartingale && (
+                        <>
+                          <div className="grid gap-3">
+                            <div className="space-y-2">
+                              <Label htmlFor="martingaleLevel">
+                                Níveis de Martingale
+                                <span className="text-xs text-muted-foreground ml-2">
+                                  (1-5)
+                                </span>
+                              </Label>
+                              <Input
+                                id="martingaleLevel"
+                                type="number"
+                                min="1"
+                                max="5"
+                                value={formData.martingaleLevel}
+                                onChange={(e) => handleNumberInputChange(e, "martingaleLevel")}
+                              />
+                              <p className="text-xs text-muted-foreground">
+                                Número máximo de apostas consecutivas em caso de perda
+                              </p>
+                            </div>
+                            
+                            <div className="space-y-2">
+                              <Label htmlFor="martingaleMultiplier">
+                                Multiplicador
+                                <span className="text-xs text-muted-foreground ml-2">
+                                  (1.0-5.0)
+                                </span>
+                              </Label>
+                              <Input
+                                id="martingaleMultiplier"
+                                type="number"
+                                min="1.0"
+                                max="5.0"
+                                step="0.1"
+                                value={formData.martingaleMultiplier}
+                                onChange={(e) => handleNumberInputChange(e, "martingaleMultiplier")}
+                              />
+                              <p className="text-xs text-muted-foreground">
+                                Valor pelo qual a aposta será multiplicada após cada perda
+                              </p>
+                            </div>
+                          </div>
+                          
+                          <div className="mt-2 p-2 bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded-md flex items-start gap-2">
+                            <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
+                            <p className="text-xs text-amber-800 dark:text-amber-300">
+                              O Martingale aumenta suas apostas após cada perda. Use com cuidado pois pode resultar em perdas significativas.
+                            </p>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
+              
               <Button type="submit" className="w-full">
                 <PlusCircle className="mr-2 h-4 w-4" />
                 Criar Regra
@@ -228,11 +342,15 @@ export default function BetRulesPage() {
             </div>
             
             <div className="rounded-lg border p-4">
-              <h4 className="font-semibold mb-2">Exemplos de Padrões</h4>
+              <h4 className="font-semibold mb-2">Martingale Explicado</h4>
               <div className="space-y-2 text-sm">
-                <p><span className="font-medium">Padrão básico:</span> "Entrada: Futebol Studio - Casa"</p>
-                <p><span className="font-medium">Com prazo:</span> "Entrada: Futebol Studio - Fora - 2 minutos"</p>
-                <p><span className="font-medium">Com valor:</span> "Entrada: R$50 Futebol Studio - Empate"</p>
+                <p><span className="font-medium">O que é:</span> Uma estratégia de apostas que dobra o valor após cada perda para recuperar perdas anteriores.</p>
+                <p><span className="font-medium">Níveis:</span> Número máximo de apostas consecutivas usando a estratégia.</p>
+                <p><span className="font-medium">Multiplicador:</span> Fator pelo qual a aposta aumenta após cada perda (normalmente 2.0).</p>
+                <p><span className="font-medium">Exemplo:</span> Com aposta inicial de R$10 e multiplicador 2x:
+                  <br />- 1ª perda: próxima aposta = R$20
+                  <br />- 2ª perda: próxima aposta = R$40
+                </p>
               </div>
             </div>
           </CardContent>
@@ -253,6 +371,7 @@ export default function BetRulesPage() {
                 <TableHead>Nome da Regra</TableHead>
                 <TableHead>Padrão de Gatilho</TableHead>
                 <TableHead>Detalhes da Aposta</TableHead>
+                <TableHead>Martingale</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
@@ -266,6 +385,21 @@ export default function BetRulesPage() {
                   </TableCell>
                   <TableCell>
                     {rule.betType} - R${rule.betAmount}
+                  </TableCell>
+                  <TableCell>
+                    {rule.useMartingale ? (
+                      <div className="text-xs">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100">
+                          Ativo
+                        </span>
+                        <div className="mt-1">
+                          Níveis: {rule.martingaleLevel}x<br />
+                          Multiplicador: {rule.martingaleMultiplier}x
+                        </div>
+                      </div>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">Desativado</span>
+                    )}
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center space-x-2">
@@ -291,7 +425,7 @@ export default function BetRulesPage() {
               ))}
               {rules.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center py-6 text-muted-foreground">
+                  <TableCell colSpan={6} className="text-center py-6 text-muted-foreground">
                     Nenhuma regra criada ainda. Crie uma regra para começar a automatizar apostas.
                   </TableCell>
                 </TableRow>
