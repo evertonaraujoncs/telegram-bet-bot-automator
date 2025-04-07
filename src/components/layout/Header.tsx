@@ -2,7 +2,20 @@
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { useState } from "react";
-import { Bell, Menu } from "lucide-react";
+import { Bell, Menu, Wallet } from "lucide-react";
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from "@/components/ui/select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Input } from "@/components/ui/input";
 
 interface HeaderProps {
   onToggleSidebar: () => void;
@@ -11,6 +24,13 @@ interface HeaderProps {
 export function Header({ onToggleSidebar }: HeaderProps) {
   const { toast } = useToast();
   const [isAutomationActive, setIsAutomationActive] = useState(false);
+  const [bankType, setBankType] = useState<"real" | "virtual">("real");
+  const [bankBalance, setBankBalance] = useState({
+    real: 1250.75, // Valor da banca real (simulando integração com plataforma)
+    virtual: 1000.00 // Valor inicial da banca virtual
+  });
+  
+  const [virtualBankInput, setVirtualBankInput] = useState(bankBalance.virtual.toString());
 
   const toggleAutomation = () => {
     setIsAutomationActive(!isAutomationActive);
@@ -21,6 +41,46 @@ export function Header({ onToggleSidebar }: HeaderProps) {
         : "A automação de apostas está em execução",
       variant: isAutomationActive ? "destructive" : "default",
     });
+  };
+
+  const handleBankTypeChange = (value: string) => {
+    setBankType(value as "real" | "virtual");
+    
+    toast({
+      title: value === "real" ? "Banca Real Selecionada" : "Banca Virtual Selecionada",
+      description: value === "real" 
+        ? "Apostas serão realizadas com dinheiro real da plataforma" 
+        : "Apostas serão simuladas sem usar dinheiro real",
+      variant: value === "real" ? "destructive" : "default",
+    });
+  };
+
+  const handleVirtualBankChange = () => {
+    const newAmount = parseFloat(virtualBankInput);
+    
+    if (isNaN(newAmount) || newAmount <= 0) {
+      toast({
+        title: "Valor inválido",
+        description: "Por favor, insira um valor válido maior que zero",
+        variant: "destructive",
+      });
+      setVirtualBankInput(bankBalance.virtual.toString());
+      return;
+    }
+    
+    setBankBalance(prev => ({
+      ...prev,
+      virtual: newAmount
+    }));
+    
+    toast({
+      title: "Banca Virtual Atualizada",
+      description: `Valor da banca virtual alterado para R$ ${newAmount.toFixed(2)}`,
+    });
+  };
+
+  const formatCurrency = (value: number) => {
+    return `R$ ${value.toFixed(2)}`;
   };
 
   return (
@@ -36,7 +96,52 @@ export function Header({ onToggleSidebar }: HeaderProps) {
           </div>
         </div>
         
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 bg-background/80 p-1.5 rounded-md border">
+            <Wallet className="h-5 w-5 text-gray-500" />
+            <div className="flex flex-col">
+              <Select value={bankType} onValueChange={handleBankTypeChange}>
+                <SelectTrigger className="w-[120px] h-7 border-0 bg-transparent p-0 text-sm">
+                  <SelectValue placeholder="Tipo de Banca" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="real">Banca Real</SelectItem>
+                  <SelectItem value="virtual">Banca Virtual</SelectItem>
+                </SelectContent>
+              </Select>
+              
+              {bankType === "real" ? (
+                <span className="text-sm font-medium">{formatCurrency(bankBalance.real)}</span>
+              ) : (
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <span className="text-sm font-medium cursor-pointer hover:text-betting-primary">
+                      {formatCurrency(bankBalance.virtual)}
+                    </span>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[200px] p-3">
+                    <div className="space-y-2">
+                      <h4 className="font-medium text-sm">Definir valor da banca virtual</h4>
+                      <div className="flex space-x-2">
+                        <Input
+                          type="number"
+                          min="1"
+                          step="any"
+                          value={virtualBankInput}
+                          onChange={(e) => setVirtualBankInput(e.target.value)}
+                          className="h-8"
+                        />
+                        <Button size="sm" onClick={handleVirtualBankChange}>
+                          OK
+                        </Button>
+                      </div>
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              )}
+            </div>
+          </div>
+          
           <Button variant="outline" size="icon" className="relative">
             <Bell className="h-5 w-5" />
             <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-betting-danger flex items-center justify-center text-[10px] text-white">3</span>
