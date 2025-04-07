@@ -24,54 +24,54 @@ export default function SettingsPage() {
 
   const handleSaveBetting = () => {
     toast({
-      title: "Settings Saved",
-      description: "Your betting settings have been updated",
+      title: "Configurações Salvas",
+      description: "Suas configurações de apostas foram atualizadas",
     });
   };
 
   const handleSaveAccount = () => {
     if (password !== confirmPassword) {
       toast({
-        title: "Error",
-        description: "Passwords do not match",
+        title: "Erro",
+        description: "As senhas não coincidem",
         variant: "destructive",
       });
       return;
     }
 
     toast({
-      title: "Account Saved",
-      description: "Your account settings have been updated",
+      title: "Conta Salva",
+      description: "Suas configurações de conta foram atualizadas",
     });
   };
 
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-3xl font-bold tracking-tight">Settings</h2>
+        <h2 className="text-3xl font-bold tracking-tight">Configurações</h2>
         <p className="text-muted-foreground">
-          Configure your betting automation preferences
+          Configure suas preferências de automação de apostas
         </p>
       </div>
 
       <Tabs defaultValue="betting" className="w-full">
         <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="betting">Betting Settings</TabsTrigger>
-          <TabsTrigger value="account">Account Settings</TabsTrigger>
-          <TabsTrigger value="notifications">Notifications</TabsTrigger>
+          <TabsTrigger value="betting">Configurações de Apostas</TabsTrigger>
+          <TabsTrigger value="account">Configurações de Conta</TabsTrigger>
+          <TabsTrigger value="notifications">Notificações</TabsTrigger>
         </TabsList>
 
         <TabsContent value="betting" className="mt-6 space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Betting Website</CardTitle>
+              <CardTitle>Site de Apostas</CardTitle>
               <CardDescription>
-                Configure the betting website URL and automation settings
+                Configure a URL do site de apostas e configurações de automação
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="betUrl">Betting URL</Label>
+                <Label htmlFor="betUrl">URL de Apostas</Label>
                 <div className="flex">
                   <Input
                     id="betUrl"
@@ -83,7 +83,7 @@ export default function SettingsPage() {
                   </Button>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  URL of the betting website where bets will be placed
+                  URL do site de apostas onde as apostas serão feitas
                 </p>
               </div>
 
@@ -93,11 +93,11 @@ export default function SettingsPage() {
                   checked={autoLogin}
                   onCheckedChange={setAutoLogin}
                 />
-                <Label htmlFor="autoLogin">Automatic login</Label>
+                <Label htmlFor="autoLogin">Login automático</Label>
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="delayBetween">Delay between bets (seconds)</Label>
+                <Label htmlFor="delayBetween">Atraso entre apostas (segundos)</Label>
                 <div className="flex items-center space-x-4">
                   <Slider
                     id="delayBetween"
@@ -111,7 +111,7 @@ export default function SettingsPage() {
                   <span className="w-12 text-center">{delayBetween}s</span>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Add delay between consecutive bets to avoid detection
+                  Adicione atraso entre apostas consecutivas para evitar detecção
                 </p>
               </div>
             </CardContent>
@@ -119,15 +119,15 @@ export default function SettingsPage() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Bet Limits</CardTitle>
+              <CardTitle>Limites de Apostas</CardTitle>
               <CardDescription>
-                Set limits to control your betting activity
+                Defina limites para controlar sua atividade de apostas
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-2">
                 <div className="flex justify-between items-center">
-                  <Label htmlFor="maxBetAmount">Maximum bet amount (R$)</Label>
+                  <Label htmlFor="maxBetAmount">Valor máximo de aposta (R$)</Label>
                   <span className="text-sm font-medium">R${maxBetAmount}</span>
                 </div>
                 <Slider
@@ -142,7 +142,7 @@ export default function SettingsPage() {
 
               <div className="space-y-2">
                 <div className="flex justify-between items-center">
-                  <Label htmlFor="dailyLimit">Daily betting limit (R$)</Label>
+                  <Label htmlFor="dailyLimit">Limite diário de apostas (R$)</Label>
                   <span className="text-sm font-medium">R${dailyLimit}</span>
                 </div>
                 <Slider
@@ -158,16 +158,16 @@ export default function SettingsPage() {
               <div className="rounded-lg bg-muted p-4 flex items-start space-x-3">
                 <AlertTriangle className="h-5 w-5 text-amber-500 mt-0.5" />
                 <div>
-                  <h4 className="font-medium mb-1">Responsible Gambling</h4>
+                  <h4 className="font-medium mb-1">Jogo Responsável</h4>
                   <p className="text-sm text-muted-foreground">
-                    Set reasonable limits to ensure responsible betting. The automation will stop once your daily limit is reached.
+                    Defina limites razoáveis para garantir apostas responsáveis. A automação será interrompida quando o limite diário for atingido.
                   </p>
                 </div>
               </div>
             </CardContent>
             <CardFooter className="flex justify-end space-x-2">
-              <Button variant="outline">Reset to Default</Button>
-              <Button onClick={handleSaveBetting}>Save Changes</Button>
+              <Button variant="outline">Restaurar Padrões</Button>
+              <Button onClick={handleSaveBetting}>Salvar Alterações</Button>
             </CardFooter>
           </Card>
         </TabsContent>
@@ -175,69 +175,69 @@ export default function SettingsPage() {
         <TabsContent value="account" className="mt-6 space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Betting Site Credentials</CardTitle>
+              <CardTitle>Credenciais do Site de Apostas</CardTitle>
               <CardDescription>
-                Your login details for the betting website
+                Seus dados de login para o site de apostas
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="username">Username/Email</Label>
+                <Label htmlFor="username">Usuário/Email</Label>
                 <Input
                   id="username"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  placeholder="Your betting site username"
+                  placeholder="Seu nome de usuário no site de apostas"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="password">Senha</Label>
                 <Input
                   id="password"
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Your betting site password"
+                  placeholder="Sua senha do site de apostas"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Confirm Password</Label>
+                <Label htmlFor="confirmPassword">Confirmar Senha</Label>
                 <Input
                   id="confirmPassword"
                   type="password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="Confirm your password"
+                  placeholder="Confirme sua senha"
                 />
               </div>
 
               <div className="rounded-lg bg-muted p-4 flex items-start space-x-3">
                 <Lock className="h-5 w-5 text-betting-primary mt-0.5" />
                 <div>
-                  <h4 className="font-medium mb-1">Security Notice</h4>
+                  <h4 className="font-medium mb-1">Aviso de Segurança</h4>
                   <p className="text-sm text-muted-foreground">
-                    Your credentials are stored securely on your device and are only used to automate bets on your behalf.
+                    Suas credenciais são armazenadas com segurança no seu dispositivo e são usadas apenas para automatizar apostas em seu nome.
                   </p>
                 </div>
               </div>
             </CardContent>
             <CardFooter className="flex justify-end">
-              <Button onClick={handleSaveAccount}>Save Credentials</Button>
+              <Button onClick={handleSaveAccount}>Salvar Credenciais</Button>
             </CardFooter>
           </Card>
 
           <Card>
             <CardHeader>
-              <CardTitle>Default Betting Settings</CardTitle>
+              <CardTitle>Configurações Padrão de Apostas</CardTitle>
               <CardDescription>
-                Configure your default betting preferences
+                Configure suas preferências padrão de apostas
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="defaultBet">Default Bet Amount (R$)</Label>
+                <Label htmlFor="defaultBet">Valor Padrão de Aposta (R$)</Label>
                 <Input
                   id="defaultBet"
                   type="number"
@@ -246,7 +246,7 @@ export default function SettingsPage() {
                   defaultValue="25"
                 />
                 <p className="text-xs text-muted-foreground">
-                  This amount will be used when no specific amount is defined in a rule
+                  Este valor será usado quando nenhum valor específico for definido em uma regra
                 </p>
               </div>
 
@@ -254,24 +254,24 @@ export default function SettingsPage() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Loss Strategy</Label>
+                  <Label>Estratégia de Perda</Label>
                   <div className="flex items-center space-x-2">
                     <Switch id="martingale" />
-                    <Label htmlFor="martingale" className="text-sm">Use Martingale</Label>
+                    <Label htmlFor="martingale" className="text-sm">Usar Martingale</Label>
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    Double bet after each loss
+                    Dobrar aposta após cada perda
                   </p>
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Win Strategy</Label>
+                  <Label>Estratégia de Ganho</Label>
                   <div className="flex items-center space-x-2">
                     <Switch id="resetOnWin" />
-                    <Label htmlFor="resetOnWin" className="text-sm">Reset after win</Label>
+                    <Label htmlFor="resetOnWin" className="text-sm">Reiniciar após ganho</Label>
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    Return to default bet after a win
+                    Voltar para a aposta padrão após um ganho
                   </p>
                 </div>
               </div>
@@ -282,18 +282,18 @@ export default function SettingsPage() {
         <TabsContent value="notifications" className="mt-6 space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Notification Settings</CardTitle>
+              <CardTitle>Configurações de Notificações</CardTitle>
               <CardDescription>
-                Configure how and when you receive notifications
+                Configure como e quando você recebe notificações
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
-                    <Label>Bet Placement</Label>
+                    <Label>Realização de Apostas</Label>
                     <p className="text-xs text-muted-foreground">
-                      Notify when a bet is placed
+                      Notificar quando uma aposta for realizada
                     </p>
                   </div>
                   <Switch defaultChecked />
@@ -303,9 +303,9 @@ export default function SettingsPage() {
 
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
-                    <Label>Bet Results</Label>
+                    <Label>Resultados de Apostas</Label>
                     <p className="text-xs text-muted-foreground">
-                      Notify about bet outcomes
+                      Notificar sobre resultados de apostas
                     </p>
                   </div>
                   <Switch defaultChecked />
@@ -315,9 +315,9 @@ export default function SettingsPage() {
 
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
-                    <Label>Errors & Warnings</Label>
+                    <Label>Erros e Avisos</Label>
                     <p className="text-xs text-muted-foreground">
-                      Notify about system errors or warnings
+                      Notificar sobre erros de sistema ou avisos
                     </p>
                   </div>
                   <Switch defaultChecked />
@@ -327,9 +327,9 @@ export default function SettingsPage() {
 
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
-                    <Label>Daily Summary</Label>
+                    <Label>Resumo Diário</Label>
                     <p className="text-xs text-muted-foreground">
-                      Receive a daily summary of your betting activity
+                      Receber um resumo diário da sua atividade de apostas
                     </p>
                   </div>
                   <Switch defaultChecked />
@@ -340,24 +340,24 @@ export default function SettingsPage() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Browser Notifications</CardTitle>
+              <CardTitle>Notificações do Navegador</CardTitle>
               <CardDescription>
-                Configure browser notifications for desktop alerts
+                Configure notificações do navegador para alertas no desktop
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 <div className="flex items-center space-x-2">
                   <Switch id="enableBrowserNotifications" defaultChecked />
-                  <Label htmlFor="enableBrowserNotifications">Enable browser notifications</Label>
+                  <Label htmlFor="enableBrowserNotifications">Ativar notificações do navegador</Label>
                 </div>
                 
                 <Button variant="outline" className="w-full">
-                  Test Notification
+                  Testar Notificação
                 </Button>
                 
                 <p className="text-sm text-muted-foreground">
-                  You may need to grant permission for notifications in your browser settings
+                  Pode ser necessário conceder permissão para notificações nas configurações do seu navegador
                 </p>
               </div>
             </CardContent>
