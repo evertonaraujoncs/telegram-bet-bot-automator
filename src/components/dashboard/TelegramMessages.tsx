@@ -81,8 +81,8 @@ export function TelegramMessages() {
     <Card className="h-[400px] flex flex-col">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <div>
-          <CardTitle>Telegram Messages</CardTitle>
-          <CardDescription>Recent messages from your channels</CardDescription>
+          <CardTitle>Mensagens do Telegram</CardTitle>
+          <CardDescription>Mensagens recentes dos seus canais</CardDescription>
         </div>
         <Button variant="outline" size="icon" onClick={handleRefresh} disabled={isRefreshing}>
           <RefreshCcw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
@@ -114,7 +114,7 @@ export function TelegramMessages() {
                         }`}
                       ></div>
                       <span className="text-xs text-muted-foreground">
-                        {message.actionTaken ? "Bet Placed" : "Action Required"}
+                        {message.actionTaken ? "Aposta Realizada" : "Ação Necessária"}
                       </span>
                     </div>
                     {!message.actionTaken && (
@@ -124,7 +124,7 @@ export function TelegramMessages() {
                         className="h-7 px-2 text-xs"
                         onClick={() => takeBetAction(message.id)}
                       >
-                        Place Bet
+                        Realizar Aposta
                       </Button>
                     )}
                   </div>

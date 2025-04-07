@@ -71,8 +71,8 @@ export default function BetRulesPage() {
     
     if (!formData.name || !formData.trigger) {
       toast({
-        title: "Error",
-        description: "Please fill all required fields",
+        title: "Erro",
+        description: "Por favor, preencha todos os campos obrigatórios",
         variant: "destructive",
       });
       return;
@@ -96,8 +96,8 @@ export default function BetRulesPage() {
     });
 
     toast({
-      title: "Rule Added",
-      description: "New betting rule has been created",
+      title: "Regra Adicionada",
+      description: "Nova regra de apostas foi criada",
     });
   };
 
@@ -112,73 +112,73 @@ export default function BetRulesPage() {
   const handleRemoveRule = (id: string) => {
     setRules(rules.filter((rule) => rule.id !== id));
     toast({
-      title: "Rule Removed",
-      description: "Betting rule has been removed",
+      title: "Regra Removida",
+      description: "Regra de apostas foi removida",
     });
   };
 
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-3xl font-bold tracking-tight">Bet Rules</h2>
+        <h2 className="text-3xl font-bold tracking-tight">Regras de Apostas</h2>
         <p className="text-muted-foreground">
-          Configure your betting rules for automatic bet placement
+          Configure suas regras de apostas para realizar apostas automáticas
         </p>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle>Create New Rule</CardTitle>
+            <CardTitle>Criar Nova Regra</CardTitle>
             <CardDescription>
-              Define the triggers and conditions for automatic betting
+              Defina os gatilhos e condições para apostas automáticas
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="name">Rule Name</Label>
+                <Label htmlFor="name">Nome da Regra</Label>
                 <Input
                   id="name"
                   name="name"
-                  placeholder="E.g., Football Studio Home"
+                  placeholder="Ex.: Football Studio Casa"
                   value={formData.name}
                   onChange={handleInputChange}
                 />
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="trigger">Message Trigger</Label>
+                <Label htmlFor="trigger">Gatilho de Mensagem</Label>
                 <Input
                   id="trigger"
                   name="trigger"
-                  placeholder="E.g., Entrada: Futebol Studio - Casa"
+                  placeholder="Ex.: Entrada: Futebol Studio - Casa"
                   value={formData.trigger}
                   onChange={handleInputChange}
                 />
                 <p className="text-xs text-muted-foreground">
-                  The text pattern that will trigger this bet rule
+                  O padrão de texto que acionará esta regra de aposta
                 </p>
               </div>
 
               <Separator />
               
               <div className="space-y-2">
-                <Label>Bet Type</Label>
+                <Label>Tipo de Aposta</Label>
                 <Select value={formData.betType} onValueChange={handleBetTypeChange}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select bet type" />
+                    <SelectValue placeholder="Selecione o tipo de aposta" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Casa">Casa (Home)</SelectItem>
-                    <SelectItem value="Fora">Fora (Away)</SelectItem>
-                    <SelectItem value="Empate">Empate (Draw)</SelectItem>
+                    <SelectItem value="Casa">Casa</SelectItem>
+                    <SelectItem value="Fora">Fora</SelectItem>
+                    <SelectItem value="Empate">Empate</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="betAmount">Bet Amount (R$)</Label>
+                <Label htmlFor="betAmount">Valor da Aposta (R$)</Label>
                 <Input
                   id="betAmount"
                   name="betAmount"
@@ -192,7 +192,7 @@ export default function BetRulesPage() {
               
               <Button type="submit" className="w-full">
                 <PlusCircle className="mr-2 h-4 w-4" />
-                Create Rule
+                Criar Regra
               </Button>
             </form>
           </CardContent>
@@ -200,39 +200,39 @@ export default function BetRulesPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Information</CardTitle>
+            <CardTitle>Informações</CardTitle>
             <CardDescription>
-              How the betting rules work
+              Como funcionam as regras de apostas
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="rounded-lg bg-muted p-4">
               <h4 className="font-semibold flex items-center mb-2">
                 <Book className="mr-2 h-4 w-4" />
-                How It Works
+                Como Funciona
               </h4>
               <ul className="space-y-2 text-sm">
                 <li>
-                  <span className="font-medium">1. Message Monitoring:</span> The system watches for messages matching your triggers in Telegram channels.
+                  <span className="font-medium">1. Monitoramento de Mensagens:</span> O sistema observa mensagens que correspondem aos seus gatilhos nos canais do Telegram.
                 </li>
                 <li>
-                  <span className="font-medium">2. Pattern Recognition:</span> When a message matches a trigger pattern, the system identifies the bet details.
+                  <span className="font-medium">2. Reconhecimento de Padrões:</span> Quando uma mensagem corresponde a um padrão de gatilho, o sistema identifica os detalhes da aposta.
                 </li>
                 <li>
-                  <span className="font-medium">3. Automatic Betting:</span> The system places bets according to your rules at <span className="font-semibold">esportiva.bet.br</span>
+                  <span className="font-medium">3. Apostas Automáticas:</span> O sistema realiza apostas de acordo com suas regras em <span className="font-semibold">esportiva.bet.br</span>
                 </li>
                 <li>
-                  <span className="font-medium">4. Results Tracking:</span> Track performance and adjust your rules as needed.
+                  <span className="font-medium">4. Acompanhamento de Resultados:</span> Acompanhe o desempenho e ajuste suas regras conforme necessário.
                 </li>
               </ul>
             </div>
             
             <div className="rounded-lg border p-4">
-              <h4 className="font-semibold mb-2">Example Patterns</h4>
+              <h4 className="font-semibold mb-2">Exemplos de Padrões</h4>
               <div className="space-y-2 text-sm">
-                <p><span className="font-medium">Basic pattern:</span> "Entrada: Futebol Studio - Casa"</p>
-                <p><span className="font-medium">With timeframe:</span> "Entrada: Futebol Studio - Fora - 2 minutos"</p>
-                <p><span className="font-medium">With stake:</span> "Entrada: R$50 Futebol Studio - Empate"</p>
+                <p><span className="font-medium">Padrão básico:</span> "Entrada: Futebol Studio - Casa"</p>
+                <p><span className="font-medium">Com prazo:</span> "Entrada: Futebol Studio - Fora - 2 minutos"</p>
+                <p><span className="font-medium">Com valor:</span> "Entrada: R$50 Futebol Studio - Empate"</p>
               </div>
             </div>
           </CardContent>
@@ -241,20 +241,20 @@ export default function BetRulesPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Active Rules</CardTitle>
+          <CardTitle>Regras Ativas</CardTitle>
           <CardDescription>
-            Manage and edit your configured betting rules
+            Gerencie e edite suas regras de apostas configuradas
           </CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Rule Name</TableHead>
-                <TableHead>Trigger Pattern</TableHead>
-                <TableHead>Bet Details</TableHead>
+                <TableHead>Nome da Regra</TableHead>
+                <TableHead>Padrão de Gatilho</TableHead>
+                <TableHead>Detalhes da Aposta</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableHead className="text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -274,7 +274,7 @@ export default function BetRulesPage() {
                         onCheckedChange={() => handleToggleRule(rule.id)} 
                       />
                       <span className="text-xs text-muted-foreground">
-                        {rule.active ? "Active" : "Inactive"}
+                        {rule.active ? "Ativa" : "Inativa"}
                       </span>
                     </div>
                   </TableCell>
@@ -292,7 +292,7 @@ export default function BetRulesPage() {
               {rules.length === 0 && (
                 <TableRow>
                   <TableCell colSpan={5} className="text-center py-6 text-muted-foreground">
-                    No rules created yet. Create a rule to start automating bets.
+                    Nenhuma regra criada ainda. Crie uma regra para começar a automatizar apostas.
                   </TableCell>
                 </TableRow>
               )}

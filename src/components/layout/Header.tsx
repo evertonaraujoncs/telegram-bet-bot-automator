@@ -15,10 +15,10 @@ export function Header({ onToggleSidebar }: HeaderProps) {
   const toggleAutomation = () => {
     setIsAutomationActive(!isAutomationActive);
     toast({
-      title: isAutomationActive ? "Automation Paused" : "Automation Active",
+      title: isAutomationActive ? "Automação Pausada" : "Automação Ativa",
       description: isAutomationActive 
-        ? "Betting automation has been paused" 
-        : "Betting automation is now running",
+        ? "A automação de apostas foi pausada" 
+        : "A automação de apostas está em execução",
       variant: isAutomationActive ? "destructive" : "default",
     });
   };
@@ -32,7 +32,7 @@ export function Header({ onToggleSidebar }: HeaderProps) {
           </Button>
           <div className="flex items-center gap-2">
             <span className="h-8 w-8 rounded-full bg-betting-primary flex items-center justify-center text-white font-bold">TB</span>
-            <h1 className="text-xl font-bold">Telegram Bet Automator</h1>
+            <h1 className="text-xl font-bold">Automatizador de Apostas</h1>
           </div>
         </div>
         
@@ -50,7 +50,7 @@ export function Header({ onToggleSidebar }: HeaderProps) {
             <div className="mr-2 flex h-2 w-2 items-center justify-center">
               <div className={`h-2 w-2 rounded-full ${isAutomationActive ? "animate-pulse-betting bg-white" : "bg-white"}`}></div>
             </div>
-            {isAutomationActive ? "Stop Automation" : "Start Automation"}
+            {isAutomationActive ? "Parar Automação" : "Iniciar Automação"}
           </Button>
         </div>
       </div>

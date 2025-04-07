@@ -23,17 +23,17 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
       icon: <MessageCircle className="h-5 w-5" />,
     },
     {
-      name: "Bet Rules",
+      name: "Regras de Apostas",
       path: "/bet-rules",
       icon: <BookOpen className="h-5 w-5" />,
     },
     {
-      name: "History",
+      name: "Histórico",
       path: "/history",
       icon: <BarChart3 className="h-5 w-5" />,
     },
     {
-      name: "Bet Settings",
+      name: "Configurações",
       path: "/settings",
       icon: <Settings className="h-5 w-5" />,
     },
@@ -76,14 +76,14 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
       </ScrollArea>
       <div className="border-t border-sidebar-border p-4">
         <div className="rounded-md bg-sidebar-accent/50 p-4">
-          <h3 className="mb-1 text-sm font-medium text-sidebar-foreground">Automation Status</h3>
+          <h3 className="mb-1 text-sm font-medium text-sidebar-foreground">Status da Automação</h3>
           <div className="flex items-center gap-2 text-xs text-sidebar-foreground/70">
             <div className="status-indicator status-active"></div>
-            System active
+            Sistema ativo
           </div>
           <div className="mt-2 flex items-center gap-2 text-xs text-sidebar-foreground/70">
             <div className="status-indicator status-inactive"></div>
-            Last bet: 15 min ago
+            Última aposta: 15 min atrás
           </div>
         </div>
       </div>

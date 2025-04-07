@@ -20,7 +20,7 @@ const SAMPLE_BETS: Bet[] = [
     outcome: "Casa",
     game: "Football Studio",
     amount: 25,
-    timestamp: "3 min ago",
+    timestamp: "3 min atrás",
     status: "active",
   },
   {
@@ -29,7 +29,7 @@ const SAMPLE_BETS: Bet[] = [
     outcome: "Fora",
     game: "Football Studio",
     amount: 50,
-    timestamp: "15 min ago",
+    timestamp: "15 min atrás",
     status: "complete",
   },
   {
@@ -38,7 +38,7 @@ const SAMPLE_BETS: Bet[] = [
     outcome: "Empate",
     game: "Football Studio",
     amount: 100,
-    timestamp: "30 min ago",
+    timestamp: "30 min atrás",
     status: "canceled",
   },
 ];
@@ -47,8 +47,8 @@ export function ActiveBetsCard() {
   return (
     <Card className="h-[400px] flex flex-col">
       <CardHeader className="pb-3">
-        <CardTitle>Active Bets</CardTitle>
-        <CardDescription>Monitor your current bets</CardDescription>
+        <CardTitle>Apostas Ativas</CardTitle>
+        <CardDescription>Monitore suas apostas atuais</CardDescription>
       </CardHeader>
       <CardContent className="flex-1">
         <div className="space-y-4">
@@ -91,7 +91,7 @@ export function ActiveBetsCard() {
                   size="sm"
                   className="h-8 border-betting-danger/20 text-betting-danger hover:bg-betting-danger/10 hover:text-betting-danger"
                 >
-                  Cancel
+                  Cancelar
                 </Button>
               )}
             </div>
@@ -99,7 +99,7 @@ export function ActiveBetsCard() {
         </div>
         
         <div className="mt-4">
-          <Button variant="outline" className="w-full">View All Bets</Button>
+          <Button variant="outline" className="w-full">Ver Todas as Apostas</Button>
         </div>
       </CardContent>
     </Card>

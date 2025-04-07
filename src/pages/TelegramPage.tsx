@@ -25,13 +25,13 @@ export default function TelegramPage() {
   const [channels, setChannels] = useState<Channel[]>([
     {
       id: "channel-1",
-      name: "Football Betting Tips",
+      name: "Dicas de Apostas Futebol",
       active: true,
       messages: 235,
     },
     {
       id: "channel-2",
-      name: "VIP Bet Signals",
+      name: "Sinais VIP de Apostas",
       active: true,
       messages: 120,
     },
@@ -40,8 +40,8 @@ export default function TelegramPage() {
   const handleConnect = () => {
     if (!botToken) {
       toast({
-        title: "Error",
-        description: "Please enter a Telegram Bot Token",
+        title: "Erro",
+        description: "Por favor, informe um Token de Bot do Telegram",
         variant: "destructive",
       });
       return;
@@ -49,8 +49,8 @@ export default function TelegramPage() {
 
     // In a real app, this would validate the token with Telegram API
     toast({
-      title: "Success",
-      description: "Connected to Telegram successfully",
+      title: "Sucesso",
+      description: "Conectado ao Telegram com sucesso",
     });
     setIsConnected(true);
   };
@@ -58,8 +58,8 @@ export default function TelegramPage() {
   const handleAddChannel = () => {
     if (!channelUrl) {
       toast({
-        title: "Error", 
-        description: "Please enter a channel URL or username", 
+        title: "Erro", 
+        description: "Por favor, informe uma URL ou nome de usuário do canal", 
         variant: "destructive",
       });
       return;
@@ -68,7 +68,7 @@ export default function TelegramPage() {
     // In a real app, this would validate the channel with Telegram API
     const newChannel: Channel = {
       id: `channel-${Date.now()}`,
-      name: `New Channel (${channelUrl})`,
+      name: `Novo Canal (${channelUrl})`,
       active: true,
       messages: 0,
     };
@@ -76,8 +76,8 @@ export default function TelegramPage() {
     setChannels([...channels, newChannel]);
     setChannelUrl("");
     toast({
-      title: "Channel Added",
-      description: "New channel has been added for monitoring",
+      title: "Canal Adicionado",
+      description: "Novo canal foi adicionado para monitoramento",
     });
   };
 
@@ -92,35 +92,35 @@ export default function TelegramPage() {
   const handleRemoveChannel = (id: string) => {
     setChannels(channels.filter((channel) => channel.id !== id));
     toast({
-      title: "Channel Removed",
-      description: "Channel has been removed from monitoring",
+      title: "Canal Removido",
+      description: "Canal foi removido do monitoramento",
     });
   };
 
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-3xl font-bold tracking-tight">Telegram Connection</h2>
+        <h2 className="text-3xl font-bold tracking-tight">Conexão com Telegram</h2>
         <p className="text-muted-foreground">
-          Connect to Telegram and monitor betting channels
+          Conecte ao Telegram e monitore canais de apostas
         </p>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Telegram Bot Setup</CardTitle>
+          <CardTitle>Configuração do Bot Telegram</CardTitle>
           <CardDescription>
-            Configure your Telegram bot to read messages from channels and groups
+            Configure seu bot do Telegram para ler mensagens de canais e grupos
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="bot-token">Telegram Bot Token</Label>
+            <Label htmlFor="bot-token">Token do Bot Telegram</Label>
             <div className="flex space-x-2">
               <Input
                 id="bot-token"
                 type="password"
-                placeholder="Enter your bot token"
+                placeholder="Digite o token do seu bot"
                 value={botToken}
                 onChange={(e) => setBotToken(e.target.value)}
                 disabled={isConnected}
@@ -129,11 +129,11 @@ export default function TelegramPage() {
                 onClick={handleConnect}
                 disabled={isConnected}
               >
-                {isConnected ? "Connected" : "Connect"}
+                {isConnected ? "Conectado" : "Conectar"}
               </Button>
             </div>
             <p className="text-xs text-muted-foreground">
-              Create a new bot with @BotFather and paste the token here
+              Crie um novo bot com @BotFather e cole o token aqui
             </p>
           </div>
 
@@ -142,10 +142,10 @@ export default function TelegramPage() {
               <Separator />
 
               <div className="space-y-2">
-                <Label>Connection Status</Label>
+                <Label>Status da Conexão</Label>
                 <div className="flex items-center space-x-2">
                   <div className="h-3 w-3 rounded-full bg-betting-secondary"></div>
-                  <span>Connected to Telegram API</span>
+                  <span>Conectado à API do Telegram</span>
                 </div>
               </div>
             </>
@@ -156,25 +156,25 @@ export default function TelegramPage() {
       {isConnected && (
         <Card>
           <CardHeader>
-            <CardTitle>Channels & Groups</CardTitle>
+            <CardTitle>Canais e Grupos</CardTitle>
             <CardDescription>
-              Manage the channels and groups that the bot will monitor
+              Gerencie os canais e grupos que o bot irá monitorar
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-end gap-2">
               <div className="grid flex-1 gap-2">
-                <Label htmlFor="channel">Add Channel or Group</Label>
+                <Label htmlFor="channel">Adicionar Canal ou Grupo</Label>
                 <Input
                   id="channel"
-                  placeholder="Enter channel URL or username (e.g., @betting_channel)"
+                  placeholder="Digite a URL ou nome de usuário do canal (ex: @canal_apostas)"
                   value={channelUrl}
                   onChange={(e) => setChannelUrl(e.target.value)}
                 />
               </div>
               <Button onClick={handleAddChannel}>
                 <Plus className="mr-2 h-4 w-4" />
-                Add
+                Adicionar
               </Button>
             </div>
 
@@ -182,10 +182,10 @@ export default function TelegramPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Channel</TableHead>
+                    <TableHead>Canal</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead>Messages</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead>Mensagens</TableHead>
+                    <TableHead className="text-right">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -204,7 +204,7 @@ export default function TelegramPage() {
                             onCheckedChange={() => handleToggleChannel(channel.id)} 
                           />
                           <span className="text-xs text-muted-foreground">
-                            {channel.active ? "Monitoring" : "Paused"}
+                            {channel.active ? "Monitorando" : "Pausado"}
                           </span>
                         </div>
                       </TableCell>
@@ -223,7 +223,7 @@ export default function TelegramPage() {
                   {channels.length === 0 && (
                     <TableRow>
                       <TableCell colSpan={4} className="text-center py-6 text-muted-foreground">
-                        No channels added yet. Add a channel to start monitoring.
+                        Nenhum canal adicionado ainda. Adicione um canal para começar o monitoramento.
                       </TableCell>
                     </TableRow>
                   )}
@@ -233,9 +233,9 @@ export default function TelegramPage() {
           </CardContent>
           <CardFooter className="flex justify-between border-t px-6 py-4">
             <p className="text-sm text-muted-foreground">
-              Monitoring {channels.filter(c => c.active).length} of {channels.length} channels
+              Monitorando {channels.filter(c => c.active).length} de {channels.length} canais
             </p>
-            <Button variant="outline">Refresh Channels</Button>
+            <Button variant="outline">Atualizar Canais</Button>
           </CardFooter>
         </Card>
       )}

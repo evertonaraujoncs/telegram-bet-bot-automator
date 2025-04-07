@@ -11,41 +11,41 @@ export default function Dashboard() {
       <div>
         <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
         <p className="text-muted-foreground">
-          Monitor your betting automation performance
+          Monitore o desempenho da sua automação de apostas
         </p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatsCard
-          title="Total Profit"
-          value="R$ 1,250.00"
+          title="Lucro Total"
+          value="R$ 1.250,00"
           trend="up"
           trendValue="12%"
-          description="vs. last week"
+          description="vs. semana passada"
           icon={<DollarSign className="h-4 w-4" />}
         />
         <StatsCard
-          title="Win Rate"
+          title="Taxa de Vitória"
           value="68%"
           trend="up"
           trendValue="5%"
-          description="vs. last week"
+          description="vs. semana passada"
           icon={<TrendingUp className="h-4 w-4" />}
         />
         <StatsCard
-          title="Total Bets"
+          title="Total de Apostas"
           value="56"
           trend="neutral"
           trendValue="2%"
-          description="vs. last week"
+          description="vs. semana passada"
           icon={<Zap className="h-4 w-4" />}
         />
         <StatsCard
-          title="Avg. Response Time"
-          value="3.2s"
+          title="Tempo Médio de Resposta"
+          value="3,2s"
           trend="down"
-          trendValue="0.5s"
-          description="vs. last week"
+          trendValue="0,5s"
+          description="vs. semana passada"
           icon={<CalendarClock className="h-4 w-4" />}
         />
       </div>
@@ -56,19 +56,19 @@ export default function Dashboard() {
       </div>
 
       <Card className="p-6">
-        <h3 className="text-xl font-bold mb-4">Quick Start Guide</h3>
+        <h3 className="text-xl font-bold mb-4">Guia de Início Rápido</h3>
         <ol className="list-decimal pl-6 space-y-2">
           <li>
-            <span className="font-medium">Configure Telegram:</span> Connect your Telegram account and add betting channels
+            <span className="font-medium">Configure o Telegram:</span> Conecte sua conta do Telegram e adicione canais de apostas
           </li>
           <li>
-            <span className="font-medium">Define Bet Rules:</span> Set up patterns to identify betting recommendations
+            <span className="font-medium">Defina Regras de Apostas:</span> Configure padrões para identificar recomendações de apostas
           </li>
           <li>
-            <span className="font-medium">Configure Betting Limits:</span> Set your risk preferences and bet amounts
+            <span className="font-medium">Configure Limites de Apostas:</span> Defina suas preferências de risco e valores de apostas
           </li>
           <li>
-            <span className="font-medium">Start Automation:</span> Turn on the system and monitor performance
+            <span className="font-medium">Inicie a Automação:</span> Ligue o sistema e monitore o desempenho
           </li>
         </ol>
       </Card>
