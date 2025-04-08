@@ -7,14 +7,16 @@ import { useToast } from "@/components/ui/use-toast";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Trash, MessageCircle, Plus } from "lucide-react";
-import { useState } from "react";
+import { Trash, MessageCircle, Plus, Loader2 } from "lucide-react";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Channel {
   id: string;
   name: string;
   active: boolean;
   messages: number;
+  url?: string;
 }
 
 export default function TelegramPage() {
@@ -22,22 +24,55 @@ export default function TelegramPage() {
   const [botToken, setBotToken] = useState("");
   const [isConnected, setIsConnected] = useState(false);
   const [channelUrl, setChannelUrl] = useState("");
-  const [channels, setChannels] = useState<Channel[]>([
-    {
-      id: "channel-1",
-      name: "Dicas de Apostas Futebol",
-      active: true,
-      messages: 235,
-    },
-    {
-      id: "channel-2",
-      name: "Sinais VIP de Apostas",
-      active: true,
-      messages: 120,
-    },
-  ]);
+  const [channels, setChannels] = useState<Channel[]>([]);
+  const [isLoadingChannels, setIsLoadingChannels] = useState(false);
+  const [pinnedChannels, setPinnedChannels] = useState<{ name: string, url: string }[]>([]);
+  const [showPinnedChannels, setShowPinnedChannels] = useState(false);
 
-  const handleConnect = () => {
+  // Load saved bot token and connection status
+  useEffect(() => {
+    const loadSavedData = async () => {
+      try {
+        // Try to get saved bot token from localStorage
+        const savedToken = localStorage.getItem('telegram_bot_token');
+        if (savedToken) {
+          setBotToken(savedToken);
+          setIsConnected(true);
+        }
+
+        // Load channels from database
+        const { data, error } = await supabase
+          .from('telegram_channels')
+          .select('*');
+
+        if (error) {
+          throw error;
+        }
+
+        if (data && data.length > 0) {
+          const formattedChannels = data.map(channel => ({
+            id: channel.id,
+            name: channel.name,
+            active: channel.active || false,
+            messages: channel.messages_count || 0,
+            url: channel.url
+          }));
+          setChannels(formattedChannels);
+        }
+      } catch (error) {
+        console.error("Error loading saved data:", error);
+        toast({
+          title: "Erro",
+          description: "Falha ao carregar dados salvos",
+          variant: "destructive",
+        });
+      }
+    };
+
+    loadSavedData();
+  }, [toast]);
+
+  const handleConnect = async () => {
     if (!botToken) {
       toast({
         title: "Erro",
@@ -47,16 +82,48 @@ export default function TelegramPage() {
       return;
     }
 
-    // In a real app, this would validate the token with Telegram API
-    toast({
-      title: "Sucesso",
-      description: "Conectado ao Telegram com sucesso",
-    });
-    setIsConnected(true);
+    setIsLoadingChannels(true);
+    setShowPinnedChannels(false);
+
+    try {
+      // Save token to localStorage for persistence
+      localStorage.setItem('telegram_bot_token', botToken);
+
+      // In a real implementation, this would validate with Telegram API
+      // For this example, we'll simulate fetching pinned channels
+      setTimeout(() => {
+        // Mock pinned channels (in a real app, these would come from Telegram API)
+        const mockPinnedChannels = [
+          { name: "Canal de Apostas Esportivas", url: "@aposta_esporte" },
+          { name: "Grupo VIP de Traders", url: "@vip_traders" },
+          { name: "Sinais de Futebol", url: "@sinais_fut" },
+          { name: "Tips Diárias de Apostas", url: "@tips_apostas" },
+          { name: "Comunidade de Apostadores", url: "@apostadores" }
+        ];
+        
+        setPinnedChannels(mockPinnedChannels);
+        setShowPinnedChannels(true);
+        setIsConnected(true);
+        setIsLoadingChannels(false);
+        
+        toast({
+          title: "Sucesso",
+          description: "Conectado ao Telegram com sucesso",
+        });
+      }, 1500);
+    } catch (error) {
+      console.error("Error connecting to Telegram:", error);
+      setIsLoadingChannels(false);
+      toast({
+        title: "Erro",
+        description: "Falha ao conectar com o Telegram",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleAddChannel = () => {
-    if (!channelUrl) {
+  const handleAddChannel = async (channelToAdd: string, channelName: string) => {
+    if (!channelToAdd) {
       toast({
         title: "Erro", 
         description: "Por favor, informe uma URL ou nome de usuário do canal", 
@@ -65,36 +132,120 @@ export default function TelegramPage() {
       return;
     }
 
-    // In a real app, this would validate the channel with Telegram API
-    const newChannel: Channel = {
-      id: `channel-${Date.now()}`,
-      name: `Novo Canal (${channelUrl})`,
-      active: true,
-      messages: 0,
-    };
+    try {
+      // Add to database
+      const { data, error } = await supabase
+        .from('telegram_channels')
+        .insert({
+          name: channelName || `Canal (${channelToAdd})`,
+          url: channelToAdd,
+          active: true,
+          messages_count: 0
+        })
+        .select();
+
+      if (error) {
+        throw error;
+      }
+
+      if (data && data.length > 0) {
+        const newChannel: Channel = {
+          id: data[0].id,
+          name: data[0].name,
+          active: data[0].active || true,
+          messages: data[0].messages_count || 0,
+          url: data[0].url
+        };
+        
+        setChannels([...channels, newChannel]);
+        setChannelUrl("");
+        setShowPinnedChannels(false);
+        
+        toast({
+          title: "Canal Adicionado",
+          description: "Novo canal foi adicionado para monitoramento",
+        });
+      }
+    } catch (error) {
+      console.error("Error adding channel:", error);
+      toast({
+        title: "Erro",
+        description: "Falha ao adicionar canal",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleToggleChannel = async (id: string) => {
+    try {
+      const channelToUpdate = channels.find(channel => channel.id === id);
+      if (!channelToUpdate) return;
+
+      const newActiveState = !channelToUpdate.active;
+
+      // Update in database
+      const { error } = await supabase
+        .from('telegram_channels')
+        .update({ active: newActiveState })
+        .eq('id', id);
+
+      if (error) {
+        throw error;
+      }
+
+      // Update local state
+      setChannels(
+        channels.map((channel) =>
+          channel.id === id ? { ...channel, active: newActiveState } : channel
+        )
+      );
+    } catch (error) {
+      console.error("Error toggling channel:", error);
+      toast({
+        title: "Erro",
+        description: "Falha ao atualizar o status do canal",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleRemoveChannel = async (id: string) => {
+    try {
+      // Remove from database
+      const { error } = await supabase
+        .from('telegram_channels')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        throw error;
+      }
+
+      // Update local state
+      setChannels(channels.filter((channel) => channel.id !== id));
+      
+      toast({
+        title: "Canal Removido",
+        description: "Canal foi removido do monitoramento",
+      });
+    } catch (error) {
+      console.error("Error removing channel:", error);
+      toast({
+        title: "Erro",
+        description: "Falha ao remover canal",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleUpdateChannels = async () => {
+    toast({
+      title: "Atualizando Canais",
+      description: "Buscando novas mensagens dos canais...",
+    });
     
-    setChannels([...channels, newChannel]);
-    setChannelUrl("");
-    toast({
-      title: "Canal Adicionado",
-      description: "Novo canal foi adicionado para monitoramento",
-    });
-  };
-
-  const handleToggleChannel = (id: string) => {
-    setChannels(
-      channels.map((channel) =>
-        channel.id === id ? { ...channel, active: !channel.active } : channel
-      )
-    );
-  };
-
-  const handleRemoveChannel = (id: string) => {
-    setChannels(channels.filter((channel) => channel.id !== id));
-    toast({
-      title: "Canal Removido",
-      description: "Canal foi removido do monitoramento",
-    });
+    // In a real implementation, this would fetch new messages from Telegram API
+    // and update the database
   };
 
   return (
@@ -123,13 +274,18 @@ export default function TelegramPage() {
                 placeholder="Digite o token do seu bot"
                 value={botToken}
                 onChange={(e) => setBotToken(e.target.value)}
-                disabled={isConnected}
+                disabled={isConnected && isLoadingChannels}
               />
               <Button 
                 onClick={handleConnect}
-                disabled={isConnected}
+                disabled={isLoadingChannels}
               >
-                {isConnected ? "Conectado" : "Conectar"}
+                {isLoadingChannels ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Conectando...
+                  </>
+                ) : isConnected ? "Reconectar" : "Conectar"}
               </Button>
             </div>
             <p className="text-xs text-muted-foreground">
@@ -162,6 +318,25 @@ export default function TelegramPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
+            {showPinnedChannels && pinnedChannels.length > 0 && (
+              <div className="mb-4">
+                <h3 className="text-sm font-medium mb-2">Canais fixados detectados</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  {pinnedChannels.slice(0, 5).map((channel, idx) => (
+                    <Button 
+                      key={idx} 
+                      variant="outline" 
+                      className="justify-start"
+                      onClick={() => handleAddChannel(channel.url, channel.name)}
+                    >
+                      <MessageCircle className="mr-2 h-4 w-4" />
+                      {channel.name}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="flex items-end gap-2">
               <div className="grid flex-1 gap-2">
                 <Label htmlFor="channel">Adicionar Canal ou Grupo</Label>
@@ -172,7 +347,7 @@ export default function TelegramPage() {
                   onChange={(e) => setChannelUrl(e.target.value)}
                 />
               </div>
-              <Button onClick={handleAddChannel}>
+              <Button onClick={() => handleAddChannel(channelUrl, "")}>
                 <Plus className="mr-2 h-4 w-4" />
                 Adicionar
               </Button>
@@ -235,7 +410,7 @@ export default function TelegramPage() {
             <p className="text-sm text-muted-foreground">
               Monitorando {channels.filter(c => c.active).length} de {channels.length} canais
             </p>
-            <Button variant="outline">Atualizar Canais</Button>
+            <Button variant="outline" onClick={handleUpdateChannels}>Atualizar Canais</Button>
           </CardFooter>
         </Card>
       )}
