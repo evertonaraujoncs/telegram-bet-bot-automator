@@ -1,80 +1,107 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { RefreshCcw, ExternalLink } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/components/ui/use-toast";
 
+// Use an interface that matches the structure in the database
 interface Message {
   id: string;
-  sender: string;
+  sender: string | null;
   content: string;
-  timestamp: string;
-  hasAction: boolean;
-  actionTaken: boolean;
+  timestamp: string | null;
+  has_action: boolean | null;
+  action_taken: boolean | null;
 }
 
-const SAMPLE_MESSAGES: Message[] = [
-  {
-    id: "1",
-    sender: "BetAdvisor",
-    content: "Entrada: Futebol Studio - Casa - 2 minutos",
-    timestamp: "10:32",
-    hasAction: true,
-    actionTaken: true,
-  },
-  {
-    id: "2",
-    sender: "BetAdvisor",
-    content: "Entrada: Futebol Studio - Fora - 5 minutos",
-    timestamp: "10:45",
-    hasAction: true,
-    actionTaken: true,
-  },
-  {
-    id: "3",
-    sender: "BetAdvisor",
-    content: "GREEN! Parabéns a todos que seguiram.",
-    timestamp: "10:47",
-    hasAction: false,
-    actionTaken: false,
-  },
-  {
-    id: "4",
-    sender: "BetAdvisor",
-    content: "Aguardando próxima oportunidade...",
-    timestamp: "11:05",
-    hasAction: false,
-    actionTaken: false,
-  },
-  {
-    id: "5",
-    sender: "BetAdvisor",
-    content: "Entrada: Futebol Studio - Empate - 1 minuto",
-    timestamp: "11:15",
-    hasAction: true,
-    actionTaken: false,
-  },
-];
-
 export function TelegramMessages() {
-  const [messages, setMessages] = useState<Message[]>(SAMPLE_MESSAGES);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const { toast } = useToast();
 
-  const handleRefresh = () => {
+  const fetchMessages = async () => {
     setIsRefreshing(true);
-    // Simulating fetch delay
-    setTimeout(() => {
+    try {
+      const { data, error } = await supabase
+        .from('telegram_messages')
+        .select('*')
+        .order('timestamp', { ascending: false })
+        .limit(10);
+
+      if (error) {
+        throw error;
+      }
+
+      setMessages(data || []);
+    } catch (error) {
+      console.error("Error fetching messages:", error);
+      toast({
+        title: "Erro",
+        description: "Falha ao carregar mensagens do Telegram",
+        variant: "destructive"
+      });
+    } finally {
       setIsRefreshing(false);
-    }, 1000);
+    }
   };
 
-  const takeBetAction = (messageId: string) => {
-    setMessages(
-      messages.map((msg) =>
-        msg.id === messageId ? { ...msg, actionTaken: true } : msg
-      )
-    );
+  useEffect(() => {
+    fetchMessages();
+
+    // Subscribe to realtime changes
+    const channel = supabase
+      .channel('public:telegram_messages')
+      .on('postgres_changes', { 
+        event: '*', 
+        schema: 'public', 
+        table: 'telegram_messages' 
+      }, () => {
+        fetchMessages();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  const handleRefresh = () => {
+    fetchMessages();
+  };
+
+  const takeBetAction = async (messageId: string) => {
+    try {
+      const { error } = await supabase
+        .from('telegram_messages')
+        .update({ action_taken: true })
+        .eq('id', messageId);
+
+      if (error) {
+        throw error;
+      }
+
+      // Update local state to reflect the change
+      setMessages(
+        messages.map((msg) =>
+          msg.id === messageId ? { ...msg, action_taken: true } : msg
+        )
+      );
+
+      toast({
+        title: "Sucesso",
+        description: "Aposta realizada com sucesso",
+      });
+    } catch (error) {
+      console.error("Error updating message:", error);
+      toast({
+        title: "Erro",
+        description: "Falha ao realizar aposta",
+        variant: "destructive"
+      });
+    }
   };
 
   return (
@@ -91,46 +118,55 @@ export function TelegramMessages() {
       <CardContent className="flex-1 p-0">
         <ScrollArea className="h-[320px] px-6">
           <div className="space-y-4 py-2">
-            {messages.map((message) => (
-              <div
-                key={message.id}
-                className={`rounded-lg p-3 text-sm ${
-                  message.hasAction
-                    ? "bg-muted/50 border border-border"
-                    : "bg-background"
-                }`}
-              >
-                <div className="flex justify-between">
-                  <div className="font-medium">{message.sender}</div>
-                  <div className="text-xs text-muted-foreground">{message.timestamp}</div>
-                </div>
-                <p className="mt-1">{message.content}</p>
-                {message.hasAction && (
-                  <div className="mt-2 flex justify-between items-center">
-                    <div className="flex items-center">
-                      <div
-                        className={`mr-2 h-2 w-2 rounded-full ${
-                          message.actionTaken ? "bg-betting-secondary" : "bg-betting-accent"
-                        }`}
-                      ></div>
-                      <span className="text-xs text-muted-foreground">
-                        {message.actionTaken ? "Aposta Realizada" : "Ação Necessária"}
-                      </span>
+            {messages.length > 0 ? (
+              messages.map((message) => (
+                <div
+                  key={message.id}
+                  className={`rounded-lg p-3 text-sm ${
+                    message.has_action
+                      ? "bg-muted/50 border border-border"
+                      : "bg-background"
+                  }`}
+                >
+                  <div className="flex justify-between">
+                    <div className="font-medium">{message.sender || "Desconhecido"}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {message.timestamp ? new Date(message.timestamp).toLocaleTimeString() : ""}
                     </div>
-                    {!message.actionTaken && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-7 px-2 text-xs"
-                        onClick={() => takeBetAction(message.id)}
-                      >
-                        Realizar Aposta
-                      </Button>
-                    )}
                   </div>
-                )}
+                  <p className="mt-1">{message.content}</p>
+                  {message.has_action && (
+                    <div className="mt-2 flex justify-between items-center">
+                      <div className="flex items-center">
+                        <div
+                          className={`mr-2 h-2 w-2 rounded-full ${
+                            message.action_taken ? "bg-betting-secondary" : "bg-betting-accent"
+                          }`}
+                        ></div>
+                        <span className="text-xs text-muted-foreground">
+                          {message.action_taken ? "Aposta Realizada" : "Ação Necessária"}
+                        </span>
+                      </div>
+                      {!message.action_taken && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-7 px-2 text-xs"
+                          onClick={() => takeBetAction(message.id)}
+                        >
+                          Realizar Aposta
+                        </Button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ))
+            ) : (
+              <div className="flex flex-col items-center justify-center h-[250px] text-muted-foreground">
+                <p>Nenhuma mensagem encontrada</p>
+                <p className="text-sm mt-2">Adicione canais do Telegram na página de configuração</p>
               </div>
-            ))}
+            )}
           </div>
         </ScrollArea>
       </CardContent>
