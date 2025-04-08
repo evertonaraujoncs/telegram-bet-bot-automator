@@ -9,7 +9,6 @@ import { Separator } from "@/components/ui/separator";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Trash, MessageCircle, Plus, Loader2 } from "lucide-react";
 import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
 
 interface Channel {
   id: string;
@@ -30,7 +29,7 @@ export default function TelegramPage() {
   const [showPinnedChannels, setShowPinnedChannels] = useState(false);
   const [connectionError, setConnectionError] = useState<string | null>(null);
 
-  // Load saved bot token and connection status and channels from the database
+  // Load saved bot token and connection status and channels from localStorage
   useEffect(() => {
     const loadSavedData = async () => {
       try {
@@ -41,24 +40,10 @@ export default function TelegramPage() {
           setIsConnected(true);
         }
 
-        // Load channels from database
-        const { data, error } = await supabase
-          .from('telegram_channels')
-          .select('*');
-
-        if (error) {
-          throw error;
-        }
-
-        if (data && data.length > 0) {
-          const formattedChannels = data.map(channel => ({
-            id: channel.id,
-            name: channel.name,
-            active: channel.active || false,
-            messages: channel.messages_count || 0,
-            url: channel.url
-          }));
-          setChannels(formattedChannels);
+        // Load channels from localStorage
+        const savedChannels = localStorage.getItem('telegram_channels');
+        if (savedChannels) {
+          setChannels(JSON.parse(savedChannels));
         }
       } catch (error) {
         console.error("Error loading saved data:", error);
@@ -121,7 +106,7 @@ export default function TelegramPage() {
         description: "Conectado ao Telegram com sucesso",
       });
 
-      // Check if we already have these channels in our database
+      // Check if we already have these channels in our localStorage
       const existingChannelUrls = channels.map(c => c.url);
       const newChannels = mockPinnedChannels.filter(c => !existingChannelUrls.includes(c.url));
       
@@ -155,39 +140,28 @@ export default function TelegramPage() {
     }
 
     try {
-      // Add to database
-      const { data, error } = await supabase
-        .from('telegram_channels')
-        .insert({
-          name: channelName || `Canal (${channelToAdd})`,
-          url: channelToAdd,
-          active: true,
-          messages_count: 0
-        })
-        .select();
-
-      if (error) {
-        throw error;
-      }
-
-      if (data && data.length > 0) {
-        const newChannel: Channel = {
-          id: data[0].id,
-          name: data[0].name,
-          active: data[0].active || true,
-          messages: data[0].messages_count || 0,
-          url: data[0].url
-        };
-        
-        setChannels([...channels, newChannel]);
-        setChannelUrl("");
-        setShowPinnedChannels(false);
-        
-        toast({
-          title: "Canal Adicionado",
-          description: "Novo canal foi adicionado para monitoramento",
-        });
-      }
+      // Add to localStorage
+      const newChannel: Channel = {
+        id: Date.now().toString(),
+        name: channelName || `Canal (${channelToAdd})`,
+        url: channelToAdd,
+        active: true,
+        messages: 0
+      };
+      
+      const updatedChannels = [...channels, newChannel];
+      setChannels(updatedChannels);
+      
+      // Save to localStorage
+      localStorage.setItem('telegram_channels', JSON.stringify(updatedChannels));
+      
+      setChannelUrl("");
+      setShowPinnedChannels(false);
+      
+      toast({
+        title: "Canal Adicionado",
+        description: "Novo canal foi adicionado para monitoramento",
+      });
     } catch (error) {
       console.error("Error adding channel:", error);
       toast({
@@ -205,22 +179,13 @@ export default function TelegramPage() {
 
       const newActiveState = !channelToUpdate.active;
 
-      // Update in database
-      const { error } = await supabase
-        .from('telegram_channels')
-        .update({ active: newActiveState })
-        .eq('id', id);
-
-      if (error) {
-        throw error;
-      }
-
-      // Update local state
-      setChannels(
-        channels.map((channel) =>
-          channel.id === id ? { ...channel, active: newActiveState } : channel
-        )
+      // Update in localStorage
+      const updatedChannels = channels.map((channel) =>
+        channel.id === id ? { ...channel, active: newActiveState } : channel
       );
+      
+      setChannels(updatedChannels);
+      localStorage.setItem('telegram_channels', JSON.stringify(updatedChannels));
     } catch (error) {
       console.error("Error toggling channel:", error);
       toast({
@@ -233,18 +198,10 @@ export default function TelegramPage() {
 
   const handleRemoveChannel = async (id: string) => {
     try {
-      // Remove from database
-      const { error } = await supabase
-        .from('telegram_channels')
-        .delete()
-        .eq('id', id);
-
-      if (error) {
-        throw error;
-      }
-
-      // Update local state
-      setChannels(channels.filter((channel) => channel.id !== id));
+      // Remove from localStorage
+      const updatedChannels = channels.filter((channel) => channel.id !== id);
+      setChannels(updatedChannels);
+      localStorage.setItem('telegram_channels', JSON.stringify(updatedChannels));
       
       toast({
         title: "Canal Removido",
@@ -266,8 +223,7 @@ export default function TelegramPage() {
       description: "Buscando novas mensagens dos canais...",
     });
     
-    // In a real implementation, this would fetch new messages from Telegram API
-    // For now, we'll simulate updating messages counts
+    // Simulate updating messages counts
     try {
       const updatedChannels = channels.map(channel => {
         if (channel.active) {
@@ -284,14 +240,27 @@ export default function TelegramPage() {
       // Update local state
       setChannels(updatedChannels);
       
-      // Update in database (in a real app, we'd update each channel)
-      for (const channel of updatedChannels) {
-        if (channel.active) {
-          await supabase
-            .from('telegram_channels')
-            .update({ messages_count: channel.messages })
-            .eq('id', channel.id);
-        }
+      // Update in localStorage
+      localStorage.setItem('telegram_channels', JSON.stringify(updatedChannels));
+      
+      // Generate some sample messages for the active channels
+      const existingMessages = JSON.parse(localStorage.getItem('telegram_messages') || '[]');
+      const newMessages = updatedChannels
+        .filter(channel => channel.active)
+        .flatMap(channel => {
+          const messagesToCreate = Math.floor(Math.random() * 3) + (channel.messages > 0 ? 0 : 1);
+          return Array.from({ length: messagesToCreate }, (_, i) => ({
+            id: `${Date.now()}-${channel.id}-${i}`,
+            sender: channel.name,
+            content: `Oportunidade de aposta ${i + 1}: Time A vs Time B, Odd @${(1.5 + Math.random()).toFixed(2)}`,
+            timestamp: new Date().toISOString(),
+            has_action: Math.random() > 0.5,
+            action_taken: false
+          }));
+        });
+      
+      if (newMessages.length > 0) {
+        localStorage.setItem('telegram_messages', JSON.stringify([...newMessages, ...existingMessages]));
       }
       
       toast({

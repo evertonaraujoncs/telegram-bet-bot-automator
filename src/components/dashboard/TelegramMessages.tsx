@@ -4,17 +4,16 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { RefreshCcw, ExternalLink } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 
-// Use an interface that matches the structure in the database
+// Use a simpler local interface for messages
 interface Message {
   id: string;
-  sender: string | null;
+  sender: string;
   content: string;
-  timestamp: string | null;
-  has_action: boolean | null;
-  action_taken: boolean | null;
+  timestamp: string;
+  has_action: boolean;
+  action_taken: boolean;
 }
 
 export function TelegramMessages() {
@@ -22,20 +21,19 @@ export function TelegramMessages() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const { toast } = useToast();
 
+  // Mock function to fetch messages without database
   const fetchMessages = async () => {
     setIsRefreshing(true);
     try {
-      const { data, error } = await supabase
-        .from('telegram_messages')
-        .select('*')
-        .order('timestamp', { ascending: false })
-        .limit(10);
-
-      if (error) {
-        throw error;
-      }
-
-      setMessages(data || []);
+      // Using setTimeout to simulate network delay
+      setTimeout(() => {
+        // Check if there are saved messages in localStorage
+        const savedMessages = localStorage.getItem('telegram_messages');
+        if (savedMessages) {
+          setMessages(JSON.parse(savedMessages));
+        }
+        setIsRefreshing(false);
+      }, 500);
     } catch (error) {
       console.error("Error fetching messages:", error);
       toast({
@@ -43,28 +41,20 @@ export function TelegramMessages() {
         description: "Falha ao carregar mensagens do Telegram",
         variant: "destructive"
       });
-    } finally {
       setIsRefreshing(false);
     }
   };
 
   useEffect(() => {
     fetchMessages();
-
-    // Subscribe to realtime changes
-    const channel = supabase
-      .channel('public:telegram_messages')
-      .on('postgres_changes', { 
-        event: '*', 
-        schema: 'public', 
-        table: 'telegram_messages' 
-      }, () => {
-        fetchMessages();
-      })
-      .subscribe();
-
+    
+    // Set up a mock polling mechanism instead of real-time subscriptions
+    const interval = setInterval(() => {
+      fetchMessages();
+    }, 30000); // Poll every 30 seconds
+    
     return () => {
-      supabase.removeChannel(channel);
+      clearInterval(interval);
     };
   }, []);
 
@@ -74,21 +64,15 @@ export function TelegramMessages() {
 
   const takeBetAction = async (messageId: string) => {
     try {
-      const { error } = await supabase
-        .from('telegram_messages')
-        .update({ action_taken: true })
-        .eq('id', messageId);
-
-      if (error) {
-        throw error;
-      }
-
       // Update local state to reflect the change
-      setMessages(
-        messages.map((msg) =>
-          msg.id === messageId ? { ...msg, action_taken: true } : msg
-        )
+      const updatedMessages = messages.map((msg) =>
+        msg.id === messageId ? { ...msg, action_taken: true } : msg
       );
+      
+      setMessages(updatedMessages);
+      
+      // Save to localStorage
+      localStorage.setItem('telegram_messages', JSON.stringify(updatedMessages));
 
       toast({
         title: "Sucesso",
@@ -105,10 +89,11 @@ export function TelegramMessages() {
   };
 
   // Add a function to simulate message retrieval if there are no messages
-  const addSampleMessage = async () => {
+  const addSampleMessage = () => {
     if (messages.length === 0) {
       try {
         const sampleMessage = {
+          id: Date.now().toString(),
           content: "Oportunidade de aposta: Barcelona vs Real Madrid, Mais de 2.5 gols @1.85",
           sender: "Canal de Apostas",
           has_action: true,
@@ -116,20 +101,16 @@ export function TelegramMessages() {
           timestamp: new Date().toISOString()
         };
         
-        const { data, error } = await supabase
-          .from('telegram_messages')
-          .insert(sampleMessage)
-          .select();
-          
-        if (error) throw error;
+        const newMessages = [sampleMessage, ...messages];
+        setMessages(newMessages);
         
-        if (data) {
-          fetchMessages();
-          toast({
-            title: "Mensagem de exemplo",
-            description: "Uma mensagem de exemplo foi adicionada para demonstração",
-          });
-        }
+        // Save to localStorage
+        localStorage.setItem('telegram_messages', JSON.stringify(newMessages));
+        
+        toast({
+          title: "Mensagem de exemplo",
+          description: "Uma mensagem de exemplo foi adicionada para demonstração",
+        });
       } catch (error) {
         console.error("Error adding sample message:", error);
       }
