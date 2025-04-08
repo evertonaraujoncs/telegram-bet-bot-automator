@@ -3,25 +3,9 @@ import { Card } from "@/components/ui/card";
 import { StatsCard } from "@/components/dashboard/StatsCard";
 import { TelegramMessages } from "@/components/dashboard/TelegramMessages";
 import { ActiveBetsCard } from "@/components/dashboard/ActiveBetsCard";
-import { DollarSign, TrendingUp, CalendarClock, Zap, Download } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { useToast } from "@/components/ui/use-toast";
+import { DollarSign, TrendingUp, CalendarClock, Zap } from "lucide-react";
 
 export default function Dashboard() {
-  const { toast } = useToast();
-
-  const handleDownload = () => {
-    // In a real app, this would be your actual download URL
-    const downloadUrl = "https://exemplo.com/download/telegram-bet-bot-win64.exe";
-    
-    window.open(downloadUrl, "_blank");
-    
-    toast({
-      title: "Download iniciado",
-      description: "O download da versão Windows começou. Abra o arquivo após o download para instalar.",
-    });
-  };
-
   return (
     <div className="space-y-6">
       <div>
@@ -30,28 +14,6 @@ export default function Dashboard() {
           Monitore o desempenho da sua automação de apostas
         </p>
       </div>
-
-      <Card className="p-6 border-betting-primary/20 bg-gradient-to-r from-betting-primary/5 to-betting-secondary/5">
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-          <div className="space-y-2">
-            <h3 className="text-xl font-bold flex items-center">
-              <Download className="mr-2 h-5 w-5 text-betting-primary" />
-              Versão para Windows
-            </h3>
-            <p className="text-sm text-muted-foreground">
-              Baixe a versão completa para Windows e execute o programa em seu computador
-            </p>
-          </div>
-          <Button 
-            size="lg" 
-            className="bg-betting-primary hover:bg-betting-primary/90"
-            onClick={handleDownload}
-          >
-            <Download className="mr-2 h-4 w-4" />
-            Baixar para Windows (64-bit)
-          </Button>
-        </div>
-      </Card>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatsCard
