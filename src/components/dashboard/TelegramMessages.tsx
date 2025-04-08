@@ -104,6 +104,38 @@ export function TelegramMessages() {
     }
   };
 
+  // Add a function to simulate message retrieval if there are no messages
+  const addSampleMessage = async () => {
+    if (messages.length === 0) {
+      try {
+        const sampleMessage = {
+          content: "Oportunidade de aposta: Barcelona vs Real Madrid, Mais de 2.5 gols @1.85",
+          sender: "Canal de Apostas",
+          has_action: true,
+          action_taken: false,
+          timestamp: new Date().toISOString()
+        };
+        
+        const { data, error } = await supabase
+          .from('telegram_messages')
+          .insert(sampleMessage)
+          .select();
+          
+        if (error) throw error;
+        
+        if (data) {
+          fetchMessages();
+          toast({
+            title: "Mensagem de exemplo",
+            description: "Uma mensagem de exemplo foi adicionada para demonstração",
+          });
+        }
+      } catch (error) {
+        console.error("Error adding sample message:", error);
+      }
+    }
+  };
+
   return (
     <Card className="h-[400px] flex flex-col">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -111,9 +143,11 @@ export function TelegramMessages() {
           <CardTitle>Mensagens do Telegram</CardTitle>
           <CardDescription>Mensagens recentes dos seus canais</CardDescription>
         </div>
-        <Button variant="outline" size="icon" onClick={handleRefresh} disabled={isRefreshing}>
-          <RefreshCcw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
-        </Button>
+        <div className="flex space-x-2">
+          <Button variant="outline" size="icon" onClick={handleRefresh} disabled={isRefreshing}>
+            <RefreshCcw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
+          </Button>
+        </div>
       </CardHeader>
       <CardContent className="flex-1 p-0">
         <ScrollArea className="h-[320px] px-6">
@@ -165,6 +199,14 @@ export function TelegramMessages() {
               <div className="flex flex-col items-center justify-center h-[250px] text-muted-foreground">
                 <p>Nenhuma mensagem encontrada</p>
                 <p className="text-sm mt-2">Adicione canais do Telegram na página de configuração</p>
+                <Button 
+                  variant="outline"
+                  size="sm"
+                  className="mt-4"
+                  onClick={addSampleMessage}
+                >
+                  Adicionar mensagem de exemplo
+                </Button>
               </div>
             )}
           </div>

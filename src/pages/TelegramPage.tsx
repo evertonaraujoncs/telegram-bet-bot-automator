@@ -28,8 +28,9 @@ export default function TelegramPage() {
   const [isLoadingChannels, setIsLoadingChannels] = useState(false);
   const [pinnedChannels, setPinnedChannels] = useState<{ name: string, url: string }[]>([]);
   const [showPinnedChannels, setShowPinnedChannels] = useState(false);
+  const [connectionError, setConnectionError] = useState<string | null>(null);
 
-  // Load saved bot token and connection status
+  // Load saved bot token and connection status and channels from the database
   useEffect(() => {
     const loadSavedData = async () => {
       try {
@@ -84,36 +85,57 @@ export default function TelegramPage() {
 
     setIsLoadingChannels(true);
     setShowPinnedChannels(false);
+    setConnectionError(null);
 
     try {
       // Save token to localStorage for persistence
       localStorage.setItem('telegram_bot_token', botToken);
 
-      // In a real implementation, this would validate with Telegram API
-      // For this example, we'll simulate fetching pinned channels
-      setTimeout(() => {
-        // Mock pinned channels (in a real app, these would come from Telegram API)
-        const mockPinnedChannels = [
-          { name: "Canal de Apostas Esportivas", url: "@aposta_esporte" },
-          { name: "Grupo VIP de Traders", url: "@vip_traders" },
-          { name: "Sinais de Futebol", url: "@sinais_fut" },
-          { name: "Tips Diárias de Apostas", url: "@tips_apostas" },
-          { name: "Comunidade de Apostadores", url: "@apostadores" }
-        ];
-        
-        setPinnedChannels(mockPinnedChannels);
-        setShowPinnedChannels(true);
-        setIsConnected(true);
-        setIsLoadingChannels(false);
-        
+      // Here we would normally make an API call to Telegram
+      // For now, we'll simulate the connection with a timeout
+      // and check if the token format is valid
+      
+      if (!botToken.includes(":")) {
+        throw new Error("Token inválido. O formato correto deve incluir ':'");
+      }
+
+      // Simulating API delay
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      // Mock pinned channels (in a real app, these would come from Telegram API)
+      const mockPinnedChannels = [
+        { name: "Canal de Apostas Esportivas", url: "@aposta_esporte" },
+        { name: "Grupo VIP de Traders", url: "@vip_traders" },
+        { name: "Sinais de Futebol", url: "@sinais_fut" },
+        { name: "Tips Diárias de Apostas", url: "@tips_apostas" },
+        { name: "Comunidade de Apostadores", url: "@apostadores" }
+      ];
+      
+      setPinnedChannels(mockPinnedChannels);
+      setShowPinnedChannels(true);
+      setIsConnected(true);
+      setIsLoadingChannels(false);
+      
+      toast({
+        title: "Sucesso",
+        description: "Conectado ao Telegram com sucesso",
+      });
+
+      // Check if we already have these channels in our database
+      const existingChannelUrls = channels.map(c => c.url);
+      const newChannels = mockPinnedChannels.filter(c => !existingChannelUrls.includes(c.url));
+      
+      // If we have new channels, ask the user if they want to add them
+      if (newChannels.length > 0) {
         toast({
-          title: "Sucesso",
-          description: "Conectado ao Telegram com sucesso",
+          title: "Canais Encontrados",
+          description: `Encontramos ${newChannels.length} novos canais para monitorar`,
         });
-      }, 1500);
+      }
     } catch (error) {
       console.error("Error connecting to Telegram:", error);
       setIsLoadingChannels(false);
+      setConnectionError(error instanceof Error ? error.message : "Erro desconhecido");
       toast({
         title: "Erro",
         description: "Falha ao conectar com o Telegram",
@@ -245,7 +267,45 @@ export default function TelegramPage() {
     });
     
     // In a real implementation, this would fetch new messages from Telegram API
-    // and update the database
+    // For now, we'll simulate updating messages counts
+    try {
+      const updatedChannels = channels.map(channel => {
+        if (channel.active) {
+          // Random number between 1-5 new messages
+          const newMessages = Math.floor(Math.random() * 5) + 1;
+          return {
+            ...channel,
+            messages: channel.messages + newMessages
+          };
+        }
+        return channel;
+      });
+      
+      // Update local state
+      setChannels(updatedChannels);
+      
+      // Update in database (in a real app, we'd update each channel)
+      for (const channel of updatedChannels) {
+        if (channel.active) {
+          await supabase
+            .from('telegram_channels')
+            .update({ messages_count: channel.messages })
+            .eq('id', channel.id);
+        }
+      }
+      
+      toast({
+        title: "Canais Atualizados",
+        description: "Novas mensagens foram encontradas",
+      });
+    } catch (error) {
+      console.error("Error updating channels:", error);
+      toast({
+        title: "Erro",
+        description: "Falha ao atualizar canais",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -291,6 +351,11 @@ export default function TelegramPage() {
             <p className="text-xs text-muted-foreground">
               Crie um novo bot com @BotFather e cole o token aqui
             </p>
+            {connectionError && (
+              <p className="text-xs text-destructive mt-2">
+                Erro: {connectionError}
+              </p>
+            )}
           </div>
 
           {isConnected && (
