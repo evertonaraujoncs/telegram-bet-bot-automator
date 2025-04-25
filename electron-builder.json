@@ -1,0 +1,31 @@
+{
+  "name": "telegram-bet-bot-automator",
+  "productName": "Telegram Bet Bot Automator",
+  "version": "1.0.0",
+  "description": "Automatizador de apostas baseado em mensagens do Telegram",
+  "main": "electron/main.js",
+  "author": "Everton Araujo",
+  "build": {
+    "appId": "com.evertonaraujo.telegramBetBotAutomator",
+    "productName": "Telegram Bet Bot Automator",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*"
+    ],
+    "win": {
+      "target": [
+        "nsis"
+      ],
+      "icon": "electron/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    }
+  }
+}
