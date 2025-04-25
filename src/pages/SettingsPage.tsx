@@ -1,4 +1,4 @@
-
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,12 +8,16 @@ import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
-import { ExternalLink, LinkIcon, Lock, DollarSign, AlertTriangle } from "lucide-react";
-import { useState } from "react";
+import { ExternalLink, LinkIcon, Lock, DollarSign, AlertTriangle, Loader2 } from "lucide-react";
+import { supabase } from '@/integrations/supabase/client';
 
 export default function SettingsPage() {
   const { toast } = useToast();
-  const [betUrl, setBetUrl] = useState("https://esportiva.bet.br/games/evolution/futebol-studio-ao-vivo");
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  
+  // Estados para as configurações
+  const [betUrl, setBetUrl] = useState("https://esportiva.bet.br/games/evolution/futebol-studio-ao-vivo") ;
   const [maxBetAmount, setMaxBetAmount] = useState(100);
   const [dailyLimit, setDailyLimit] = useState(500);
   const [autoLogin, setAutoLogin] = useState(true);
@@ -21,15 +25,124 @@ export default function SettingsPage() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [delayBetween, setDelayBetween] = useState(5);
+  const [defaultBet, setDefaultBet] = useState(25);
+  const [useMartingale, setUseMartingale] = useState(false);
+  const [resetOnWin, setResetOnWin] = useState(true);
 
-  const handleSaveBetting = () => {
-    toast({
-      title: "Configurações Salvas",
-      description: "Suas configurações de apostas foram atualizadas",
-    });
+  // Carregar configurações do Supabase
+  useEffect(() => {
+    const loadSettings = async () => {
+      setIsLoading(true);
+      
+      try {
+        // Verificar se há um usuário autenticado
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (user) {
+          // Buscar configurações do usuário
+          const { data, error } = await supabase
+            .from('user_settings')
+            .select('*')
+            .eq('user_id', user.id)
+            .single();
+          
+          if (error) throw error;
+          
+          if (data) {
+            // Atualizar estados com os dados do Supabase
+            setBetUrl(data.bet_url || betUrl);
+            setMaxBetAmount(data.max_bet_amount || maxBetAmount);
+            setDailyLimit(data.daily_limit || dailyLimit);
+            setAutoLogin(data.auto_login !== null ? data.auto_login : autoLogin);
+            setUsername(data.username || '');
+            setPassword(data.password || '');
+            setConfirmPassword(data.password || '');
+            setDelayBetween(data.delay_between_bets || delayBetween);
+            setDefaultBet(data.default_bet || defaultBet);
+            setUseMartingale(data.use_martingale !== null ? data.use_martingale : useMartingale);
+            setResetOnWin(data.reset_on_win !== null ? data.reset_on_win : resetOnWin);
+          }
+        }
+      } catch (err) {
+        console.error('Erro ao carregar configurações:', err);
+        toast({
+          title: "Erro",
+          description: "Falha ao carregar configurações",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadSettings();
+  }, [toast]);
+
+  const handleSaveBetting = async () => {
+    setIsSaving(true);
+    
+    try {
+      // Verificar se há um usuário autenticado
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        throw new Error('Usuário não autenticado');
+      }
+      
+      // Verificar se já existe configuração para o usuário
+      const { data } = await supabase
+        .from('user_settings')
+        .select('id')
+        .eq('user_id', user.id)
+        .single();
+      
+      const settingsData = {
+        bet_url: betUrl,
+        max_bet_amount: maxBetAmount,
+        daily_limit: dailyLimit,
+        auto_login: autoLogin,
+        delay_between_bets: delayBetween,
+        default_bet: defaultBet,
+        use_martingale: useMartingale,
+        reset_on_win: resetOnWin,
+        updated_at: new Date().toISOString()
+      };
+      
+      if (data) {
+        // Atualizar configuração existente
+        await supabase
+          .from('user_settings')
+          .update(settingsData)
+          .eq('id', data.id);
+      } else {
+        // Criar nova configuração
+        await supabase
+          .from('user_settings')
+          .insert({ 
+            ...settingsData,
+            user_id: user.id,
+            username: '',
+            password: ''
+          });
+      }
+      
+      toast({
+        title: "Configurações Salvas",
+        description: "Suas configurações de apostas foram atualizadas",
+      });
+    } catch (err) {
+      console.error('Erro ao salvar configurações:', err);
+      toast({
+        title: "Erro",
+        description: "Falha ao salvar configurações",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  const handleSaveAccount = () => {
+  const handleSaveAccount = async () => {
     if (password !== confirmPassword) {
       toast({
         title: "Erro",
@@ -38,12 +151,78 @@ export default function SettingsPage() {
       });
       return;
     }
-
-    toast({
-      title: "Conta Salva",
-      description: "Suas configurações de conta foram atualizadas",
-    });
+    
+    setIsSaving(true);
+    
+    try {
+      // Verificar se há um usuário autenticado
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        throw new Error('Usuário não autenticado');
+      }
+      
+      // Verificar se já existe configuração para o usuário
+      const { data } = await supabase
+        .from('user_settings')
+        .select('id')
+        .eq('user_id', user.id)
+        .single();
+      
+      const accountData = {
+        username,
+        password,
+        updated_at: new Date().toISOString()
+      };
+      
+      if (data) {
+        // Atualizar configuração existente
+        await supabase
+          .from('user_settings')
+          .update(accountData)
+          .eq('id', data.id);
+      } else {
+        // Criar nova configuração
+        await supabase
+          .from('user_settings')
+          .insert({ 
+            ...accountData,
+            user_id: user.id,
+            bet_url: betUrl,
+            max_bet_amount: maxBetAmount,
+            daily_limit: dailyLimit,
+            auto_login: autoLogin,
+            delay_between_bets: delayBetween,
+            default_bet: defaultBet,
+            use_martingale: useMartingale,
+            reset_on_win: resetOnWin
+          });
+      }
+      
+      toast({
+        title: "Conta Salva",
+        description: "Suas configurações de conta foram atualizadas",
+      });
+    } catch (err) {
+      console.error('Erro ao salvar conta:', err);
+      toast({
+        title: "Erro",
+        description: "Falha ao salvar configurações de conta",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin mb-4" />
+        <p className="text-muted-foreground">Carregando configurações...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -167,7 +346,14 @@ export default function SettingsPage() {
             </CardContent>
             <CardFooter className="flex justify-end space-x-2">
               <Button variant="outline">Restaurar Padrões</Button>
-              <Button onClick={handleSaveBetting}>Salvar Alterações</Button>
+              <Button onClick={handleSaveBetting} disabled={isSaving}>
+                {isSaving ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Salvando...
+                  </>
+                ) : "Salvar Alterações"}
+              </Button>
             </CardFooter>
           </Card>
         </TabsContent>
@@ -218,13 +404,20 @@ export default function SettingsPage() {
                 <div>
                   <h4 className="font-medium mb-1">Aviso de Segurança</h4>
                   <p className="text-sm text-muted-foreground">
-                    Suas credenciais são armazenadas com segurança no seu dispositivo e são usadas apenas para automatizar apostas em seu nome.
+                    Suas credenciais são armazenadas com segurança no banco de dados e são usadas apenas para automatizar apostas em seu nome.
                   </p>
                 </div>
               </div>
             </CardContent>
             <CardFooter className="flex justify-end">
-              <Button onClick={handleSaveAccount}>Salvar Credenciais</Button>
+              <Button onClick={handleSaveAccount} disabled={isSaving}>
+                {isSaving ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Salvando...
+                  </>
+                ) : "Salvar Credenciais"}
+              </Button>
             </CardFooter>
           </Card>
 
@@ -242,8 +435,8 @@ export default function SettingsPage() {
                   id="defaultBet"
                   type="number"
                   min="1"
-                  placeholder="25"
-                  defaultValue="25"
+                  value={defaultBet}
+                  onChange={(e) => setDefaultBet(Number(e.target.value))}
                 />
                 <p className="text-xs text-muted-foreground">
                   Este valor será usado quando nenhum valor específico for definido em uma regra
@@ -256,7 +449,11 @@ export default function SettingsPage() {
                 <div className="space-y-2">
                   <Label>Estratégia de Perda</Label>
                   <div className="flex items-center space-x-2">
-                    <Switch id="martingale" />
+                    <Switch 
+                      id="martingale" 
+                      checked={useMartingale}
+                      onCheckedChange={setUseMartingale}
+                    />
                     <Label htmlFor="martingale" className="text-sm">Usar Martingale</Label>
                   </div>
                   <p className="text-xs text-muted-foreground">
@@ -267,7 +464,11 @@ export default function SettingsPage() {
                 <div className="space-y-2">
                   <Label>Estratégia de Ganho</Label>
                   <div className="flex items-center space-x-2">
-                    <Switch id="resetOnWin" />
+                    <Switch 
+                      id="resetOnWin" 
+                      checked={resetOnWin}
+                      onCheckedChange={setResetOnWin}
+                    />
                     <Label htmlFor="resetOnWin" className="text-sm">Reiniciar após ganho</Label>
                   </div>
                   <p className="text-xs text-muted-foreground">
