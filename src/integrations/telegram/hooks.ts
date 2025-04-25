@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { telegramClient } from './client';
 import { supabase } from '@/integrations/supabase/client';
@@ -9,23 +8,35 @@ export function useTelegramConnection() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Carregar token salvo do localStorage ao inicializar
+  // Carregar token salvo do Supabase ao inicializar
   useEffect(() => {
     const loadSavedToken = async () => {
       try {
-        // Verificar se há um token salvo no localStorage
-        const savedToken = localStorage.getItem('telegram_bot_token');
+        // Verificar se há um usuário autenticado
+        const { data: { user } } = await supabase.auth.getUser();
         
-        if (savedToken) {
-          setToken(savedToken);
-          telegramClient.setToken(savedToken);
+        if (user) {
+          // Buscar configurações do usuário
+          const { data, error } = await supabase
+            .from('user_settings')
+            .select('*')
+            .eq('user_id', user.id)
+            .single();
           
-          try {
-            const connected = await telegramClient.testConnection();
-            setIsConnected(connected);
-          } catch (err) {
-            console.error('Erro ao testar conexão com token salvo:', err);
-            // Não definir erro aqui para não mostrar mensagem de erro ao carregar
+          if (error) throw error;
+          
+          // Se houver um token salvo, configurar e testar conexão
+          if (data && data.telegram_token) {
+            setToken(data.telegram_token);
+            telegramClient.setToken(data.telegram_token);
+            
+            try {
+              const connected = await telegramClient.testConnection();
+              setIsConnected(connected);
+            } catch (err) {
+              console.error('Erro ao testar conexão com token salvo:', err);
+              // Não definir erro aqui para não mostrar mensagem de erro ao carregar
+            }
           }
         }
       } catch (err) {
@@ -52,8 +63,42 @@ export function useTelegramConnection() {
         setIsConnected(true);
         setToken(newToken);
         
-        // Salvar token no localStorage para persistência
-        localStorage.setItem('telegram_bot_token', newToken);
+        // Salvar token no Supabase
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (user) {
+          // Verificar se já existe configuração para o usuário
+          const { data } = await supabase
+            .from('user_settings')
+            .select('id')
+            .eq('user_id', user.id)
+            .single();
+          
+          if (data) {
+            // Atualizar configuração existente
+            await supabase
+              .from('user_settings')
+              .update({ telegram_token: newToken })
+              .eq('id', data.id);
+          } else {
+            // Criar nova configuração
+            await supabase
+              .from('user_settings')
+              .insert({ 
+                user_id: user.id,
+                telegram_token: newToken,
+                username: '',
+                default_bet: 25,
+                max_bet_amount: 100,
+                daily_limit: 500,
+                auto_login: true,
+                use_martingale: false,
+                reset_on_win: true,
+                delay_between_bets: 5,
+                bet_url: 'https://esportiva.bet.br/games/evolution/futebol-studio-ao-vivo'
+              }) ;
+          }
+        }
       }
       
       return connected;
@@ -69,8 +114,7 @@ export function useTelegramConnection() {
   const disconnect = useCallback(() => {
     setIsConnected(false);
     setToken('');
-    // Remover token do localStorage
-    localStorage.removeItem('telegram_bot_token');
+    // Não removemos o token do Supabase para manter o histórico
   }, []);
 
   return {
@@ -93,43 +137,51 @@ export function useTelegramChannels() {
     setError(null);
     
     try {
-      // Tentar buscar canais da API do Telegram
-      let telegramChannels = [];
-      try {
-        telegramChannels = await telegramClient.getChannels();
-      } catch (err) {
-        console.error('Erro ao buscar canais do Telegram:', err);
-        // Continuar com os canais locais
+      // Buscar canais da API do Telegram
+      const telegramChannels = await telegramClient.getChannels();
+      
+      // Buscar canais salvos no Supabase
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (user) {
+        const { data: savedChannels } = await supabase
+          .from('telegram_channels')
+          .select('*')
+          .eq('user_id', user.id);
+        
+        // Mesclar canais do Telegram com canais salvos
+        const mergedChannels = telegramChannels.map(telegramChannel => {
+          const savedChannel = savedChannels?.find(sc => sc.id === telegramChannel.id);
+          
+          return {
+            ...telegramChannel,
+            active: savedChannel ? savedChannel.active : true,
+            messages_count: savedChannel ? savedChannel.messages_count : 0
+          };
+        });
+        
+        setChannels(mergedChannels);
+        
+        // Salvar novos canais encontrados no Supabase
+        for (const channel of telegramChannels) {
+          const exists = savedChannels?.some(sc => sc.id === channel.id);
+          
+          if (!exists) {
+            await supabase
+              .from('telegram_channels')
+              .insert({
+                id: channel.id,
+                user_id: user.id,
+                name: channel.name,
+                url: channel.username ? `@${channel.username}` : null,
+                active: true,
+                messages_count: 0
+              });
+          }
+        }
       }
       
-      // Buscar canais salvos no localStorage
-      const savedChannelsJson = localStorage.getItem('telegram_channels') || '[]';
-      const savedChannels = JSON.parse(savedChannelsJson);
-      
-      // Mesclar canais do Telegram com canais salvos
-      const mergedChannels = telegramChannels.map(telegramChannel => {
-        const savedChannel = savedChannels.find((sc: any) => sc.id === telegramChannel.id);
-        
-        return {
-          ...telegramChannel,
-          active: savedChannel ? savedChannel.active : true,
-          messages_count: savedChannel ? savedChannel.messages_count : 0
-        };
-      });
-      
-      // Adicionar quaisquer canais que estejam apenas no localStorage
-      savedChannels.forEach((savedChannel: any) => {
-        if (!mergedChannels.some(channel => channel.id === savedChannel.id)) {
-          mergedChannels.push(savedChannel);
-        }
-      });
-      
-      setChannels(mergedChannels);
-      
-      // Salvar canais no localStorage
-      localStorage.setItem('telegram_channels', JSON.stringify(mergedChannels));
-      
-      return mergedChannels;
+      return telegramChannels;
     } catch (err: any) {
       setError(err.message || 'Erro ao buscar canais do Telegram');
       throw err;
@@ -140,83 +192,98 @@ export function useTelegramChannels() {
 
   const toggleChannelActive = useCallback(async (channelId: string, active: boolean) => {
     try {
-      setChannels(prev => 
-        prev.map(channel => 
-          channel.id === channelId 
-            ? { ...channel, active } 
-            : channel
-        )
-      );
+      const { data: { user } } = await supabase.auth.getUser();
       
-      // Atualizar localStorage
-      const updatedChannels = channels.map(channel => 
-        channel.id === channelId 
-          ? { ...channel, active } 
-          : channel
-      );
-      localStorage.setItem('telegram_channels', JSON.stringify(updatedChannels));
+      if (user) {
+        await supabase
+          .from('telegram_channels')
+          .update({ active })
+          .eq('id', channelId)
+          .eq('user_id', user.id);
+        
+        setChannels(prev => 
+          prev.map(channel => 
+            channel.id === channelId 
+              ? { ...channel, active } 
+              : channel
+          )
+        );
+      }
     } catch (err) {
       console.error('Erro ao atualizar status do canal:', err);
       throw err;
     }
-  }, [channels]);
+  }, []);
 
   const removeChannel = useCallback(async (channelId: string) => {
     try {
-      const updatedChannels = channels.filter(channel => channel.id !== channelId);
-      setChannels(updatedChannels);
+      const { data: { user } } = await supabase.auth.getUser();
       
-      // Atualizar localStorage
-      localStorage.setItem('telegram_channels', JSON.stringify(updatedChannels));
+      if (user) {
+        await supabase
+          .from('telegram_channels')
+          .delete()
+          .eq('id', channelId)
+          .eq('user_id', user.id);
+        
+        setChannels(prev => prev.filter(channel => channel.id !== channelId));
+      }
     } catch (err) {
       console.error('Erro ao remover canal:', err);
       throw err;
     }
-  }, [channels]);
+  }, []);
 
   const updateChannels = useCallback(async () => {
     try {
       const updatedChannels = await fetchChannels();
       
-      // Simular busca de novas mensagens para cada canal ativo
-      const updatedChannelsWithMessages = updatedChannels.map(channel => {
-        if (channel.active) {
-          // Incrementar contador de mensagens aleatoriamente entre 0 e 5
-          const newMessagesCount = Math.floor(Math.random() * 6);
-          return {
-            ...channel,
-            messages_count: channel.messages_count + newMessagesCount
-          };
+      // Buscar novas mensagens para cada canal ativo
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (user) {
+        for (const channel of updatedChannels) {
+          if (channel.active) {
+            const messages = await telegramClient.getMessages(channel.id);
+            
+            // Salvar novas mensagens no Supabase
+            for (const message of messages) {
+              // Verificar se a mensagem já existe
+              const { data: existingMessage } = await supabase
+                .from('telegram_messages')
+                .select('id')
+                .eq('id', message.id)
+                .single();
+              
+              if (!existingMessage) {
+                await supabase
+                  .from('telegram_messages')
+                  .insert({
+                    id: message.id,
+                    channel_id: channel.id,
+                    content: message.content,
+                    sender: message.sender,
+                    timestamp: message.timestamp,
+                    has_action: message.has_action,
+                    action_taken: message.action_taken
+                  });
+              }
+            }
+            
+            // Atualizar contador de mensagens
+            await supabase
+              .from('telegram_channels')
+              .update({ 
+                messages_count: channel.messages_count + messages.length,
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', channel.id)
+              .eq('user_id', user.id);
+          }
         }
-        return channel;
-      });
-      
-      setChannels(updatedChannelsWithMessages);
-      
-      // Salvar no localStorage
-      localStorage.setItem('telegram_channels', JSON.stringify(updatedChannelsWithMessages));
-      
-      // Gerar algumas mensagens de exemplo para canais ativos
-      const existingMessagesJson = localStorage.getItem('telegram_messages') || '[]';
-      const existingMessages = JSON.parse(existingMessagesJson);
-      
-      const newMessages = updatedChannelsWithMessages
-        .filter(channel => channel.active)
-        .flatMap(channel => {
-          const messagesToCreate = Math.floor(Math.random() * 3) + (channel.messages_count > 0 ? 0 : 1);
-          return Array.from({ length: messagesToCreate }, (_, i) => ({
-            id: `${Date.now()}-${channel.id}-${i}`,
-            channel_id: channel.id,
-            sender: channel.name,
-            content: `Oportunidade de aposta ${i + 1}: Time A vs Time B, Odd @${(1.5 + Math.random()).toFixed(2)}`,
-            timestamp: new Date().toISOString(),
-            has_action: Math.random() > 0.5,
-            action_taken: false
-          }));
-        });
-      
-      if (newMessages.length > 0) {
-        localStorage.setItem('telegram_messages', JSON.stringify([...newMessages, ...existingMessages]));
+        
+        // Atualizar a lista de canais com os novos contadores
+        await fetchChannels();
       }
     } catch (err) {
       console.error('Erro ao atualizar canais:', err);
@@ -245,39 +312,36 @@ export function useTelegramMessages() {
     setError(null);
     
     try {
-      // Buscar canais ativos
-      const channelsJson = localStorage.getItem('telegram_channels') || '[]';
-      const channels = JSON.parse(channelsJson);
-      const activeChannelIds = channels
-        .filter((channel: any) => channel.active)
-        .map((channel: any) => channel.id);
+      const { data: { user } } = await supabase.auth.getUser();
       
-      if (activeChannelIds.length > 0) {
-        // Buscar mensagens dos canais ativos do localStorage
-        const messagesJson = localStorage.getItem('telegram_messages') || '[]';
-        const allMessages = JSON.parse(messagesJson);
+      if (user) {
+        // Buscar canais ativos
+        const { data: activeChannels } = await supabase
+          .from('telegram_channels')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('active', true);
         
-        // Filtrar mensagens por canais ativos
-        const channelMessages = allMessages
-          .filter((message: any) => activeChannelIds.includes(message.channel_id))
-          .sort((a: any, b: any) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
-          .slice(0, limit);
-        
-        // Adicionar nome do canal a cada mensagem
-        const messagesWithChannelNames = channelMessages.map((message: any) => {
-          const channel = channels.find((c: any) => c.id === message.channel_id);
-          return {
-            ...message,
-            channel_name: channel ? channel.name : 'Canal Desconhecido'
-          };
-        });
-        
-        setMessages(messagesWithChannelNames);
-        return messagesWithChannelNames;
-      } else {
-        setMessages([]);
-        return [];
+        if (activeChannels && activeChannels.length > 0) {
+          // Buscar mensagens dos canais ativos
+          const { data: channelMessages, error } = await supabase
+            .from('telegram_messages')
+            .select('*, telegram_channels(name)')
+            .in('channel_id', activeChannels.map(c => c.id))
+            .order('timestamp', { ascending: false })
+            .limit(limit);
+          
+          if (error) throw error;
+          
+          setMessages(channelMessages || []);
+          return channelMessages;
+        } else {
+          setMessages([]);
+          return [];
+        }
       }
+      
+      return [];
     } catch (err: any) {
       setError(err.message || 'Erro ao buscar mensagens do Telegram');
       throw err;
@@ -288,7 +352,11 @@ export function useTelegramMessages() {
 
   const markMessageAsProcessed = useCallback(async (messageId: string) => {
     try {
-      // Atualizar na memória
+      await supabase
+        .from('telegram_messages')
+        .update({ action_taken: true })
+        .eq('id', messageId);
+      
       setMessages(prev => 
         prev.map(message => 
           message.id === messageId 
@@ -296,18 +364,6 @@ export function useTelegramMessages() {
             : message
         )
       );
-      
-      // Atualizar no localStorage
-      const messagesJson = localStorage.getItem('telegram_messages') || '[]';
-      const allMessages = JSON.parse(messagesJson);
-      
-      const updatedMessages = allMessages.map((message: any) => 
-        message.id === messageId 
-          ? { ...message, action_taken: true } 
-          : message
-      );
-      
-      localStorage.setItem('telegram_messages', JSON.stringify(updatedMessages));
     } catch (err) {
       console.error('Erro ao marcar mensagem como processada:', err);
       throw err;
