@@ -1,4 +1,3 @@
-
 import { chromium, Browser, Page } from 'playwright';
 
 export class PlaywrightBrowser {
@@ -150,4 +149,3 @@ export class PlaywrightBrowser {
     }
   }
 }
-
